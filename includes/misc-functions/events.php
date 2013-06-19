@@ -123,7 +123,7 @@ function mp_events_post( $mp_events ){
 			if ( $event_repeat == 'none' ){ 
 												
 				//Set to name of day of month- EG "March 16, 1986"
-				$post_date = date("m_d_Y", $post_date);
+				$post_date = date("Y_m_d", $post_date);
 				
 				//If this array has not yet been set up for this week day, set it up.
 				if ( !isset( $single_events[$post_date] ) ){  $single_events[$post_date] = array(); }
@@ -229,22 +229,24 @@ function mp_events_post( $mp_events ){
 		//If there are no repeating posts in this query
 		if ( empty( $yearly_posts ) &&  empty( $monthly_posts ) && empty( $weekly_posts ) && empty( $daily_posts ) ) {
 			
-			//set the posts per page to be the lesser of posts per page or single_events 
-			$posts_per_page = $posts_per_page > count( $single_events ) ? count( $single_events ) : $posts_per_page;
+			//Set default $posts_per_page_length
+			$posts_per_page_length = array();
 			
-			//Temporarily set the oldest date to something crazily high we'll never live to see
-			$oldestDate = 9999999999999999;
-			
-			//Find which date is the oldest one in the single array
-			foreach($single_events as $curDate => $single_event){
-			  if ($curDate < $oldestDate) {
-				 $oldestDate = $curDate;
-			  }
-			}
-					
-			//Set starting date to first post's date
-			$current_day =  get_post_meta( $single_events[$oldestDate][0], 'event_start_date', true );
+			//Set current date
+			$current_day = $year .'-' . $month . '-' . $day;
+									
+			//Create the posts_per_page based on the number of events that are in the future still
+			foreach($single_events as $thisDate => $single_event){
+				
+				//If the date of this event is newer thant he present date
+				if ( $thisDate > $current_day ) {
+					//add it to our posts_per_page length
+					array_push( $posts_per_page_length, $thisDate );
+				}
+			}															
 															
+			//set the posts per page to be the lesser of posts per page or single_events 
+			$posts_per_page = $posts_per_page > count( $posts_per_page_length ) ? count( $posts_per_page_length ) : $posts_per_page;
 		}
 		else{
 			
@@ -266,7 +268,7 @@ function mp_events_post( $mp_events ){
 												
 			$current_time = strtotime($current_day);
 			
-			$full_date = date("m_d_Y", $current_time);
+			$full_date = date("Y_m_d", $current_time);
 			$day_of_week = date("l", $current_time); //Monday
 			$day_of_month = date("d", $current_time); //01
 			$day_of_month_of_year = date("M j", $current_time); //01
