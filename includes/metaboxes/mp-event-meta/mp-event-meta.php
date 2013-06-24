@@ -23,14 +23,14 @@ function mp_events_create_meta_box(){
 	$mp_events_items_array = array(
 		array(
 			'field_id'			=> 'event_start_date',
-			'field_title' 	=> __( 'Event Start Date', 'mp_events'),
+			'field_title' 	=> __( 'Event Start Date  (Required)', 'mp_events'),
 			'field_description' 	=> 'The date of this event',
 			'field_type' 	=> 'date',
 			'field_value' => ''
 		),
 		array(
 			'field_id'			=> 'event_start_time',
-			'field_title' 	=> __( 'Event Start Time', 'mp_events'),
+			'field_title' 	=> __( 'Event Start Time (Required)', 'mp_events'),
 			'field_description' 	=> 'The start time for this event.',
 			'field_type' 	=> 'time',
 			'field_value' => ''

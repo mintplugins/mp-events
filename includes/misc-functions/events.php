@@ -3,13 +3,13 @@
 * Order events baed on their set date in the event_start_date meta field
 */
 function mp_events( $query ) {
-		
+			
 	//If this is a post_type
 	if ( isset( $query->query['post_type'] ) ) {
 		
 		//If that post type is mp_event
 		if( $query->query['post_type'] == 'mp_event' ) {
-							
+										
 			//Since $query->set is not working for secondary loops, we'll use a global variable for now :( <-- sad face
 			global $actual_posts_per_page;
 			
@@ -24,11 +24,13 @@ function mp_events( $query ) {
 			$query->set( 'posts_per_page', -1 );
 			
 			//Order by meta_key
-			$query->set( 'orderby',  'meta_key' );
-			
+			$query->set( 'orderby', 'meta_value' );
+				
 			//Set meta Key to start date
 			$query->set( 'meta_key',  'event_start_date' );
 			
+			//Order by meta_key
+			$query->set( 'order', 'ASC' );
 			
 			if ( !is_admin() ){
 				
@@ -39,32 +41,38 @@ function mp_events( $query ) {
 				add_filter ( 'the_posts', 'mp_events_post' );
 			
 			}	
-							
+			
+			//Set our custom query to be the same as this query
+			global $mp_events_custom_query;
+			$mp_events_custom_query = $query;				
 		}	
-		
+				
 	}
 	
 	//if this is a mp_events taxonomy
 	if ( isset( $query->query['mp_calendars'] ) ){
-				
+						
 		//Since $query->set is not working for secondary loops, we'll use a global variable for now :( <-- sad face
 		global $actual_posts_per_page;
 			
 		//Set posts per page to unlimited - so that we loop through all WordPress created mp_event posts
 		$actual_posts_per_page = $query->get( 'posts_per_page' );
 		$actual_posts_per_page = !empty( $actual_posts_per_page ) ? $actual_posts_per_page  : get_option( 'posts_per_page' );
-		
+					
 		//This part isn't working for secondary loops - so we are using a global variable as described above
 		$query->set( 'actual_posts_per_page',  $actual_posts_per_page );
 		
 		//Set posts per page to unlimited - so that we loop through all WordPress created mp_event posts
 		$query->set( 'posts_per_page', -1 );
-		
+				
 		//Order by meta_key
-		$query->set( 'orderby',  'meta_key' );
-		
+		$query->set( 'orderby', 'meta_value' );
+			
 		//Set meta Key to start date
 		$query->set( 'meta_key',  'event_start_date' );
+		
+		//Order by meta_key
+		$query->set( 'order', 'ASC' );
 			
 		if ( !is_admin() ){
 			
@@ -74,7 +82,11 @@ function mp_events( $query ) {
 			//Set filter to create repeaters
 			add_filter ( 'the_posts', 'mp_events_post' );
 		
-		}	
+		}
+		
+		//Set our custom query to be the same as this query
+		global $mp_events_custom_query;
+		$mp_events_custom_query = $query;	
 	}
 	
 	return;
@@ -86,23 +98,26 @@ add_action ( 'pre_get_posts', 'mp_events', 1 );
 */
 function mp_events_post( $mp_events ){
 	
+	//Main query (page if page.php, archive if archive.php etc)
 	global $wp_query;
+	
+	//Events Query Only (If this is an archive page for events, this will match the wp_query var. If it is a custom query, it will not
+	global $mp_events_custom_query;
 	
 	//Since $query->set is not working for secondary loops, we'll use a global variable for now :( <-- sad face
 	global $actual_posts_per_page;
-	
-	//Set the date for single pages to the URL passed date
-	if ( is_single() ){
+		
+	//Set the date for single event pages to the URL passed date
+	if ( is_single() && !isset( $wp_query->queried_object->post_type ) ){ //$wp_query->queried_object->post_type is NOT set on single event pages
 		
 		//Get date from URL
-		$url_date = !empty( $_GET['mp_event_date'] ) ? $_GET['mp_event_date'] : $wp_query->posts[0]->post_date;
-		$wp_query->posts[0]->post_date = $url_date;
+		$url_date = !empty( $_GET['mp_event_date'] ) ? $_GET['mp_event_date'] : $mp_events_custom_query->posts[0]->post_date;
+		$mp_events_custom_query->posts[0]->post_date = $url_date;
 		
 		return $mp_events;
 				
 	}
-		
-	if ( !is_single() ){
+	else{
 					
 		//Loop through mp_events
 		foreach ( $mp_events as $key => $mp_event ){
@@ -204,68 +219,109 @@ function mp_events_post( $mp_events ){
 		
 		//Set Timezone
 		date_default_timezone_set('America/Los_Angeles');
+				
+		//Get year from the URL using the mp_events_custom_query
+		$year = isset( $mp_events_custom_query->query_vars['mp_events_year'] ) ? $mp_events_custom_query->query_vars['mp_events_year'] : date('Y');
 		
-		//Set posts per page to number of days in current month, or to the number set in settings > reading
-		$posts_per_page = isset( $wp_query->query_vars['mp_events_month'] ) ? date('t') : $actual_posts_per_page; //$wp_query->query_vars['actual_posts_per_page']
+		//Get month from the URL using the mp_events_custom_query
+		$month = isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? $mp_events_custom_query->query_vars['mp_events_month'] : date('m');
 		
-		//Get year from the URL using the wp_query
-		$year = isset( $wp_query->query_vars['mp_events_year'] ) ? $wp_query->query_vars['mp_events_year'] : date('Y');
-		
-		//Get month from the URL using the wp_query
-		$month = isset( $wp_query->query_vars['mp_events_month'] ) ? $wp_query->query_vars['mp_events_month'] : date('m');
-		
-		//Set day from the URL using the wp_query. If the month is set, set it to 1, if not, set it to today
-		$day = isset( $wp_query->query_vars['mp_events_month'] ) ? 1 : date('d');
+		//Set day from the URL using the mp_events_custom_query. If the month is set, set it to 1, if not, set it to today
+		$day = !isset( $mp_events_custom_query->query_vars['mp_events_day'] ) ? isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 1 : date('d') : $mp_events_custom_query->query_vars['mp_events_day'];
 		
 		//Get page number - and make sure the page isn't anything higher than 500 - to keep servers from crashing
-		$paged = $wp_query->query_vars['paged'] > 500 ? 500 : $wp_query->query_vars['paged'];
+		$paged = $mp_events_custom_query->query_vars['paged'] > 500 ? 500 : $mp_events_custom_query->query_vars['paged'];
+								
+		//Set starting date
+		$current_day = $year .'-' . $month . '-' . $day;
 		
-		//Set offset from the URL using the wp_query.
-		$day_offset = $wp_query->query_vars['paged'] != 0 ? $paged * $posts_per_page - $posts_per_page  : 0;
-				
-		//Add day offset to posts per page - we will subtract the day offset from the array after it is built (below the loop)
-		$posts_per_page = $posts_per_page + $day_offset;
+		//Set posts per page to number of days in current month, or to the number set in settings > reading
+		if ( isset( $mp_events_custom_query->query_vars['mp_events_days_per_page'] ) ){
+			
+			$posts_per_page = $mp_events_custom_query->query_vars['mp_events_days_per_page'];
+			
+		}elseif ( isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ){
+			
+			$posts_per_page = date('t', strtotime( $current_day ) );
+			
+		}else{
+			
+			$posts_per_page = $actual_posts_per_page; //$mp_events_custom_query->query_vars['actual_posts_per_page']
+		}
 		
-		//If there are no repeating posts in this query
+		/**
+		* If there are NO repeating posts in this query
+		* Loop through posts
+		*/
 		if ( empty( $yearly_posts ) &&  empty( $monthly_posts ) && empty( $weekly_posts ) && empty( $daily_posts ) ) {
 			
-			//Set default $posts_per_page_length
-			$posts_per_page_length = array();
-			
-			//Set current date
-			$current_day = $year .'-' . $month . '-' . $day;
-									
-			//Create the posts_per_page based on the number of events that are in the future still
-			foreach($single_events as $thisDate => $single_event){
+			//Loop through each post
+			foreach ( $mp_events as $mp_event ){
 				
-				//If the date of this event is newer thant he present date
-				if ( $thisDate > $current_day ) {
-					//add it to our posts_per_page length
-					array_push( $posts_per_page_length, $thisDate );
+				//get start date of this post
+				$start_date =  get_post_meta( $mp_event->ID, 'event_start_date', true );						
+				
+				//If the start date is in the future
+				if ( $start_date > $current_day ){
+					
+					//Get the start time for this event from the meta
+					$start_time =  get_post_meta( $mp_event->ID, 'event_start_time', true );
+					$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
+												
+					//Reset the date
+					$mp_event->post_date = $start_date . ' ' . $start_time;
+					
+					//Add this post into the return array of posts to show
+					array_push( $rebuilt_posts_array, $mp_event );
+					
 				}
-			}															
-															
-			//set the posts per page to be the lesser of posts per page or single_events 
-			$posts_per_page = $posts_per_page > count( $posts_per_page_length ) ? count( $posts_per_page_length ) : $posts_per_page;
-		}
-		else{
+			}
 			
-			//Set starting date
-			$current_day = $year .'-' . $month . '-' . $day;
+			//Set number of pages
+			$mp_events_custom_query->max_num_pages = ceil( count( $rebuilt_posts_array ) / $posts_per_page );
+			
+			//Set offset from the URL using the mp_events_custom_query.
+			$event_offset = $paged != 0 ? $paged * $posts_per_page - $posts_per_page  : 0;
+			
+			//If paged == 0, set it to be 1			
+			$paged = $paged == 0 ? 1 : $paged;
+			
+			//Offset posts based on page number and amount of posts per page
+			$rebuilt_posts_array = array_slice( $rebuilt_posts_array, $event_offset, $posts_per_page * $paged );
 		
+			//Return
+			return $rebuilt_posts_array;
+			
 		}
+		
+		/**
+		* If we made it this far, there ARE repeating posts in this query
+		*/
+		
+		//Set offset from the URL using the mp_events_custom_query.
+		$day_offset = $paged != 0 ? $paged * $posts_per_page - $posts_per_page  : 0;
+		
+		//Add day offset to posts per page - we will subtract the day offset from the array after it is built (below the loop)
+		$posts_per_page = $posts_per_page + $day_offset;
 						
 		//Set counter
 		$counter = 0;
 								
 		//Set type of loop cut off
-		$loop_cutoff_type = isset( $wp_query->query_vars['mp_events_month'] ) ? 'month' : 'postsperpage';
+		$loop_cutoff_type = isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 'days_per_page' : 'posts_per_page';
+		
+		//If the cutoff type has been passed to the query, use it, instead use the above setting
+		$loop_cutoff_type = isset( $mp_events_custom_query->query_vars['mp_events_days_per_page'] ) ? 'days_per_page' : $loop_cutoff_type;
 				
-		//Loop through dates
+		/**
+		* If there ARE repeating posts in this query
+		* Loop through dates starting at current_day (set above)
+		*/
 		while ( $counter < $posts_per_page ){
 			
-			//echo $counter;
-												
+			//Add correct amount to counter based on cutoff type 
+			$counter = $loop_cutoff_type == 'days_per_page' ? $counter + 1 : count( $rebuilt_posts_array );
+															
 			$current_time = strtotime($current_day);
 			
 			$full_date = date("Y_m_d", $current_time);
@@ -288,10 +344,10 @@ function mp_events_post( $mp_events ){
 							$this_event = get_post( $single_event );
 							
 							$start_time =  get_post_meta( $single_event, 'event_start_time', true );
-							$start_time = !empty ( $start_time ) ? $start_time : '12:00';
+							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
 														
 							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time . ':00';
+							$this_event->post_date = $current_day . ' ' . $start_time;
 							
 							//Add the date to the permalink
 							new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
@@ -311,10 +367,10 @@ function mp_events_post( $mp_events ){
 					$this_event = get_post( $daily_post );
 							
 					$start_time =  get_post_meta( $daily_post, 'event_start_time', true );
-					$start_time = !empty ( $start_time ) ? $start_time : '12:00';
+					$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
 												
 					//Reset the date
-					$this_event->post_date = $current_day . ' ' . $start_time . ':00';
+					$this_event->post_date = $current_day . ' ' . $start_time;
 					
 					//Add the date to the permalink
 					new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
@@ -336,10 +392,10 @@ function mp_events_post( $mp_events ){
 							$this_event = get_post( $weekday_post );
 							
 							$start_time =  get_post_meta( $weekday_post, 'event_start_time', true );
-							$start_time = !empty ( $start_time ) ? $start_time : '12:00';
+							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
 														
 							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time . ':00';
+							$this_event->post_date = $current_day . ' ' . $start_time;
 														
 							//Add the date to the permalink
 							new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
@@ -363,10 +419,10 @@ function mp_events_post( $mp_events ){
 							$this_event = get_post( $monthday_post );
 							
 							$start_time =  get_post_meta( $monthday_post, 'event_start_time', true );
-							$start_time = !empty ( $start_time ) ? $start_time : '12:00';
+							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
 														
 							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time . ':00';
+							$this_event->post_date = $current_day . ' ' . $start_time;
 							
 							//Add the date to the permalink
 							new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
@@ -390,10 +446,10 @@ function mp_events_post( $mp_events ){
 							$this_event = get_post( $monthday_post );
 							
 							$start_time =  get_post_meta( $monthday_post, 'event_start_time', true );
-							$start_time = !empty ( $start_time ) ? $start_time : '12:00';
+							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
 														
 							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time . ':00';
+							$this_event->post_date = $current_day . ' ' . $start_time;
 							
 							array_push( $rebuilt_posts_array, $this_event );
 						}
@@ -403,18 +459,23 @@ function mp_events_post( $mp_events ){
 			
 			//Add one day to the current day to prepare for the next iteration			
 			$current_day = mp_events_add_date( $current_day, $day=1, $mth=0, $yr=0 );
-			
-			//Add correct amount to counter based on cutoff type 
-			$counter = $loop_cutoff_type == 'month' ? $counter+1 : count( $rebuilt_posts_array );
-			
+								
 		//End loop through date range
+		}
+						
+		//If this is not a monthly query
+		if ( $loop_cutoff_type != 'days_per_page' ){
+			//If the length of $rebuilt_posts_array is longer than $posts_per_page 
+			//(This happens if there is more than 1 event per day
+			//Make sure we cut the array length off at the posts per page
+			$rebuilt_posts_array = array_slice( $rebuilt_posts_array, 0, $posts_per_page );
 		}
 		
 		//Offset posts based on previous offset number
 		$rebuilt_posts_array = array_slice( $rebuilt_posts_array, $day_offset );
 		
 		//Set the max number of pages in the Wp_query variable to 5 pages - if we are not showing a full month
-		!isset( $wp_query->query_vars['mp_events_month'] ) ? $wp_query->max_num_pages = 5 : 0;
+		!isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? $mp_events_custom_query->max_num_pages = 5 : 0;
 														
 		//If there is nothing in the $rebuilt_posts_array
 		if ( empty( $rebuilt_posts_array ) ){
@@ -435,7 +496,7 @@ function mp_events_post( $mp_events ){
 		}
 		//Make sure this doesn't affect other loops on this page
 		remove_filter ( 'the_posts', 'mp_events_post' );
-		
+				
 		return $rebuilt_posts_array;
 	}
 }
