@@ -16,6 +16,12 @@ function mp_events_create_meta_box(){
 		'metabox_priority' => 'low' 
 	);
 	
+	$timezone_identifiers = DateTimeZone::listAbbreviations();
+	foreach( $timezone_identifiers as $abbr => $timezone ){
+		$timezone_select_array[strtoupper($abbr)] = $timezone[0]['timezone_id'];
+	
+	}
+		
 	/**
 	 * Array which stores all info about the options within the metabox
 	 *
@@ -41,6 +47,14 @@ function mp_events_create_meta_box(){
 			'field_description' 	=> 'The end time for this event.',
 			'field_type' 	=> 'time',
 			'field_value' => ''
+		),
+		array(
+			'field_id'			=> 'event_time_zone',
+			'field_title' 	=> __( 'Event Time Zone', 'mp_events'),
+			'field_description' 	=> 'The Time Zone for this event.',
+			'field_type' 	=> 'select',
+			'field_value' => '',
+			'field_select_values' => $timezone_select_array
 		),
 		array(
 			'field_id'			=> 'event_repeat',

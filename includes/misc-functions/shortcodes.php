@@ -8,14 +8,18 @@ function mp_events_single_event_shortcode(){
 	
 	$post_id = get_the_ID();
 	
+	//Set Timezone to last timezone on earth so events stay 
+	date_default_timezone_set('America/New_York');
+	
 	//Check if the ?mp_event_date url variable is set
 	if ( isset( $_GET['mp_event_date'] ) ) {
 		
 		//Get the date from the URL
 		$url_date =  $_GET['mp_event_date'];
+		echo $url_date;
 		$url_date = strtotime(  $url_date );
-		$event_start_date = date('D, F j, Y', $url_date );
-		
+		$event_start_date = mysql2date('D, F j, Y', $url_date );
+				
 	}
 	//Otherwise get the date from the post meta
 	else{
@@ -81,7 +85,7 @@ function mp_events_calendar_shortcode( $atts ){
 	global $wp_query;
 		
 	//shortcode vars passed-in
-	$vars =  shortcode_atts( array('sources' => NULL ), $atts );
+	$vars =  shortcode_atts( array('source' => NULL ), $atts );
 	
 	//Start Year
 	$year = isset( $_GET['mp_events_year'] ) ? $_GET['mp_events_year'] : date( 'Y' );
@@ -127,7 +131,7 @@ function mp_events_calendar_shortcode( $atts ){
 			array(
 				'taxonomy' =>  'mp_calendars',
 				'field'    => 'id',
-				'terms'    => array('204'),
+				'terms'    => array( $vars['source'] ),
 				'operator' => 'IN'
 			)
 		)
@@ -138,12 +142,16 @@ function mp_events_calendar_shortcode( $atts ){
 	
 	if ( $calendar_posts->have_posts() ) {
 		
+		//Link to previous month
 		$output_html = '<a href="' . add_query_arg( array( 'mp_events_month' => date( 'm', strtotime( 'first day of last month', strtotime( $current_month ) ) ), 'mp_events_year' => date( 'Y', strtotime( 'first day of last month', strtotime( $current_month ) ) ) ), get_permalink() ) . '" >← </a>';
 		
+		//Show current month
 		$output_html .= date( 'F Y', strtotime( $current_month ) );
 		
+		//Used in Link to next month
 		$first_day_of_next_month = strtotime( 'first day of next month', strtotime( $current_month ) );
 		
+		//Link to next month
 		$output_html .= '<a href="' . add_query_arg( array( 'mp_events_month' => date( 'm', $first_day_of_next_month ), 'mp_events_year' => date( 'Y', $first_day_of_next_month ) ), get_permalink() ) . '" > →</a>';
 					 			
 		//Set counter
@@ -152,6 +160,7 @@ function mp_events_calendar_shortcode( $atts ){
 		//Create output for shortcode
 		$output_html .= '<div class="mp-events-holder">';
 		
+		//Unordered list which holds calendar
 		$output_html .= '<ul class="mp-events-ul">';
 		
 		//One iteration for each day of the month
@@ -188,13 +197,16 @@ function mp_events_calendar_shortcode( $atts ){
 			//New HTML for day box
 			$output_html .=  '<li class="' . $li_class_output . '">';
 			
+			//If this is the first day of a month
 			if ( date( 'j', strtotime( $current_day ) )  == 1 ){
 				
+				//SHow the name of the month and the day
 				$output_html .= '<div class="mp-events-day-number">' . date( 'M j', strtotime( $current_day ) ) . '</div>';
 				
 			}
 			else{
-									
+				
+				//Otherwise just show the day
 				$output_html .= '<div class="mp-events-day-number">' . date( 'j', strtotime( $current_day ) ) . '</div>';
 			
 			}
@@ -219,8 +231,6 @@ function mp_events_calendar_shortcode( $atts ){
 			
 			//Increment counter
 			$counter = $counter+1;
-			
-			
 			
 		}
 				

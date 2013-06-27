@@ -144,12 +144,17 @@ function mp_events_include_files(){
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/shortcodes.php' );
 		
 		/**
+		 * Shortcode insert functions
+		 */
+		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/shortcode-insert.php' );
+		
+		/**
 		 * Misc Functions
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/misc-functions.php' );
 		
 		/**
-		 * Misc Functions
+		 * Enqueue Scripts
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/enqueue-scripts.php' );
 					

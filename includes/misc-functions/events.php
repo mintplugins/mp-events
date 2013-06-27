@@ -217,8 +217,8 @@ function mp_events_post( $mp_events ){
 		*/
 		$rebuilt_posts_array = array();
 		
-		//Set Timezone
-		date_default_timezone_set('America/Los_Angeles');
+		//Set Timezone to last timezone on earth so events stay 
+		date_default_timezone_set('America/New_York');
 				
 		//Get year from the URL using the mp_events_custom_query
 		$year = isset( $mp_events_custom_query->query_vars['mp_events_year'] ) ? $mp_events_custom_query->query_vars['mp_events_year'] : date('Y');
@@ -345,9 +345,12 @@ function mp_events_post( $mp_events ){
 							
 							$start_time =  get_post_meta( $single_event, 'event_start_time', true );
 							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
+							
+							//Timezone
+							$time_zone =  get_post_meta( $single_event, 'event_time_zone', true );
 														
 							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time;
+							$this_event->post_date = $current_day . ' ' . $start_time . ' ' . $time_zone;
 							
 							//Add the date to the permalink
 							new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
@@ -369,8 +372,12 @@ function mp_events_post( $mp_events ){
 					$start_time =  get_post_meta( $daily_post, 'event_start_time', true );
 					$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
 												
+					//Timezone
+					$time_zone =  get_post_meta( $daily_post, 'event_time_zone', true );
+												
 					//Reset the date
-					$this_event->post_date = $current_day . ' ' . $start_time;
+					$this_event->post_date = $current_day . ' ' . $start_time . ' ' . $time_zone;
+							
 					
 					//Add the date to the permalink
 					new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
@@ -394,8 +401,12 @@ function mp_events_post( $mp_events ){
 							$start_time =  get_post_meta( $weekday_post, 'event_start_time', true );
 							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
 														
+							//Timezone
+							$time_zone =  get_post_meta( $weekday_post, 'event_time_zone', true );
+														
 							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time;
+							$this_event->post_date = $current_day . ' ' . $start_time . ' ' . $time_zone;
+							
 														
 							//Add the date to the permalink
 							new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
@@ -421,8 +432,11 @@ function mp_events_post( $mp_events ){
 							$start_time =  get_post_meta( $monthday_post, 'event_start_time', true );
 							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
 														
+							//Timezone
+							$time_zone =  get_post_meta( $monthday_post, 'event_time_zone', true );
+														
 							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time;
+							$this_event->post_date = $current_day . ' ' . $start_time . ' ' . $time_zone;
 							
 							//Add the date to the permalink
 							new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
@@ -448,8 +462,13 @@ function mp_events_post( $mp_events ){
 							$start_time =  get_post_meta( $monthday_post, 'event_start_time', true );
 							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
 														
+							//Timezone
+							$time_zone =  get_post_meta( $monthday_post, 'event_time_zone', true );
+							
+							
+														
 							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time;
+							$this_event->post_date = $current_day . ' ' . $start_time . ' ' . $time_zone;
 							
 							array_push( $rebuilt_posts_array, $this_event );
 						}
@@ -539,4 +558,19 @@ class mp_events_set_permalink_filter{
 		}
 	}
 	
+}
+
+function mp_events_timezone( $time_zone ){
+	
+	echo $time_zone;
+	
+	if ( isset( $time_zone ) ){ 
+		$dateTime = new DateTime(); 
+		$dateTime->setTimeZone(new DateTimeZone('America/New_York')); 
+		return $dateTime->format('T'); 
+	}
+	else {
+		return;
+	}
+								
 }
