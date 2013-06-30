@@ -66,7 +66,7 @@ function mp_events_create_meta_box(){
 			'field_description' 	=> 'Does this event repeat?',
 			'field_type' 	=> 'select',
 			'field_value' => '',
-			'field_select_values' => array( 'none' => 'None', 'daily' => 'Every Day', 'weekly' => 'Every Week', 'fortnightly' => 'Every 2 Weeks', 'monthly' => 'Every Month', 'yearly' => 'Every Year' )
+			'field_select_values' => array( 'none' => 'None', 'daily' => 'Every Day', 'weekly' => 'Every Week', 'monthly' => 'Every Month', 'yearly' => 'Every Year' )
 		),
 		array(
 			'field_id'			=> 'event_location_name',
