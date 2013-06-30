@@ -16,7 +16,11 @@ function mp_events_create_meta_box(){
 		'metabox_priority' => 'low' 
 	);
 	
+	//Get all Timezones
 	$timezone_identifiers = DateTimeZone::listAbbreviations();
+	
+	//Default empty option at the top 
+	$timezone_select_array[NULL] = 'None';
 	foreach( $timezone_identifiers as $abbr => $timezone ){
 		$timezone_select_array[strtoupper($abbr)] = $timezone[0]['timezone_id'];
 	

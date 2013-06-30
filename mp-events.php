@@ -157,6 +157,12 @@ function mp_events_include_files(){
 		 * Enqueue Scripts
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/enqueue-scripts.php' );
+		
+		/**
+		 * Settings
+		 */
+		require( MP_EVENTS_PLUGIN_DIR . 'includes/settings/general-settings/general-settings.php' );
+		
 					
 	}
 }

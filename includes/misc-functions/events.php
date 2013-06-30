@@ -119,7 +119,7 @@ function mp_events_post( $mp_events ){
 	}
 	else{
 					
-		//Loop through mp_events
+		//Loop through mp_events - which is the passed in, processed post array
 		foreach ( $mp_events as $key => $mp_event ){
 		
 			//Set Post ID
@@ -217,8 +217,12 @@ function mp_events_post( $mp_events ){
 		*/
 		$rebuilt_posts_array = array();
 		
-		//Set Timezone to last timezone on earth so events stay 
-		date_default_timezone_set('America/New_York');
+		//Get user-selected, default timezone
+		$default_timezone = mp_core_get_option( 'mp_events_settings_general',  'mp_events_default_timezone' );
+		$default_timezone = !empty( $default_timezone ) ? $default_timezone : 'America/Los_Angeles';
+		
+		//Default Timezone - if events have no timezone selected, it will use this one
+		date_default_timezone_set($default_timezone);
 				
 		//Get year from the URL using the mp_events_custom_query
 		$year = isset( $mp_events_custom_query->query_vars['mp_events_year'] ) ? $mp_events_custom_query->query_vars['mp_events_year'] : date('Y');
@@ -226,15 +230,15 @@ function mp_events_post( $mp_events ){
 		//Get month from the URL using the mp_events_custom_query
 		$month = isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? $mp_events_custom_query->query_vars['mp_events_month'] : date('m');
 		
-		//Set day from the URL using the mp_events_custom_query. If the month is set, set it to 1, if not, set it to today
-		$day = !isset( $mp_events_custom_query->query_vars['mp_events_day'] ) ? isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 1 : date('d') : $mp_events_custom_query->query_vars['mp_events_day'];
+		//Set day from the URL using the mp_events_custom_query. If the month is set, set it to 1, if not, set it to yesterday
+		$day = !isset( $mp_events_custom_query->query_vars['mp_events_day'] ) ? isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 1 : date('d', strtotime('yesterday' ) ) : $mp_events_custom_query->query_vars['mp_events_day'];
 		
 		//Get page number - and make sure the page isn't anything higher than 500 - to keep servers from crashing
 		$paged = $mp_events_custom_query->query_vars['paged'] > 500 ? 500 : $mp_events_custom_query->query_vars['paged'];
 								
 		//Set starting date
 		$current_day = $year .'-' . $month . '-' . $day;
-		
+				
 		//Set posts per page to number of days in current month, or to the number set in settings > reading
 		if ( isset( $mp_events_custom_query->query_vars['mp_events_days_per_page'] ) ){
 			
@@ -259,14 +263,24 @@ function mp_events_post( $mp_events ){
 			foreach ( $mp_events as $mp_event ){
 				
 				//get start date of this post
-				$start_date =  get_post_meta( $mp_event->ID, 'event_start_date', true );						
+				$start_date =  get_post_meta( $mp_event->ID, 'event_start_date', true );	
 				
-				//If the start date is in the future
-				if ( $start_date > $current_day ){
-					
-					//Get the start time for this event from the meta
-					$start_time =  get_post_meta( $mp_event->ID, 'event_start_time', true );
-					$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
+				//Get the start time for this event from the meta
+				$start_time =  get_post_meta( $mp_event->ID, 'event_start_time', true );
+				$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
+				
+				//End Time 
+				$end_time =  get_post_meta( $post_id, 'event_start_time', true );
+				$end_time = !empty ( $end_time ) ? $end_time . ':00' : $start_time;									
+				
+				//Timezone
+				$time_zone =  get_post_meta( $mp_event->ID, 'event_time_zone', true );
+				
+				//Get number of seconds difference between the event's timezone and the PHP current timezone
+				$time_zone_offset = !empty($time_zone) ? mp_events_get_timezone_offset($time_zone) : NULL;
+								
+				//If this event is in the future according to "now" and this is a posts per page
+				if ( strtotime( $start_date . ' ' . $end_time . ' ' . $time_zone ) > strtotime( 'now' ) ){
 												
 					//Reset the date
 					$mp_event->post_date = $start_date . ' ' . $start_time;
@@ -312,7 +326,10 @@ function mp_events_post( $mp_events ){
 		
 		//If the cutoff type has been passed to the query, use it, instead use the above setting
 		$loop_cutoff_type = isset( $mp_events_custom_query->query_vars['mp_events_days_per_page'] ) ? 'days_per_page' : $loop_cutoff_type;
-				
+		
+		//Get the time right "now"		
+		$utc_right_now = strtotime("now");
+		
 		/**
 		* If there ARE repeating posts in this query
 		* Loop through dates starting at current_day (set above)
@@ -332,30 +349,20 @@ function mp_events_post( $mp_events ){
 			//Add all no repeat posts
 			//If there are any one-off posts
 			if (!empty( $single_events ) ) {
-				//Loop through each set of weekdays
+				//Loop through each single event
 				foreach ($single_events as $fulldate_num => $single_events_array){
 					//If this fulldate_num is the same as the current day we are looping through
 					if ( $fulldate_num == $full_date ){	
 															
 						//Loop through each post set for this full_date
 						foreach( $single_events_array as $single_event ){
-														
-							//Get this post
-							$this_event = get_post( $single_event );
 							
-							$start_time =  get_post_meta( $single_event, 'event_start_time', true );
-							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
+							//Change date to correct date and make other modifications				
+							$this_event = mp_events_modify_event( $single_event, $current_day, $loop_cutoff_type );
 							
-							//Timezone
-							$time_zone =  get_post_meta( $single_event, 'event_time_zone', true );
-														
-							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time . ' ' . $time_zone;
-							
-							//Add the date to the permalink
-							new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
-							
-							array_push( $rebuilt_posts_array, $this_event );
+							//Add this event to the array if it isn't returned as NULL
+							if ( !empty ($this_event) ) { array_push( $rebuilt_posts_array, $this_event ); }
+	
 						}
 					}
 				}
@@ -366,23 +373,12 @@ function mp_events_post( $mp_events ){
 			if (!empty( $daily_posts ) ) {
 				foreach ($daily_posts as $daily_post){
 					
-					//Get this post
-					$this_event = get_post( $daily_post );
-							
-					$start_time =  get_post_meta( $daily_post, 'event_start_time', true );
-					$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
-												
-					//Timezone
-					$time_zone =  get_post_meta( $daily_post, 'event_time_zone', true );
-												
-					//Reset the date
-					$this_event->post_date = $current_day . ' ' . $start_time . ' ' . $time_zone;
-							
+					//Change date to correct date and make other modifications				
+					$this_event = mp_events_modify_event( $daily_post, $current_day, $loop_cutoff_type );
 					
-					//Add the date to the permalink
-					new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
-							
-					array_push( $rebuilt_posts_array, $this_event );
+					//Add this event to the array if it isn't returned as NULL
+					if ( !empty ($this_event) ) { array_push( $rebuilt_posts_array, $this_event ); }
+					
 				}
 			}
 			
@@ -395,23 +391,12 @@ function mp_events_post( $mp_events ){
 						//Loop through each post set for this weekday
 						foreach( $weekday_array as $weekday_post ){
 							
-							//Get this post
-							$this_event = get_post( $weekday_post );
+							//Change date to correct date and make other modifications				
+							$this_event = mp_events_modify_event( $weekday_post, $current_day, $loop_cutoff_type );
 							
-							$start_time =  get_post_meta( $weekday_post, 'event_start_time', true );
-							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
-														
-							//Timezone
-							$time_zone =  get_post_meta( $weekday_post, 'event_time_zone', true );
-														
-							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time . ' ' . $time_zone;
-							
-														
-							//Add the date to the permalink
-							new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
-							
-							array_push( $rebuilt_posts_array, $this_event );
+							//Add this event to the array if it isn't returned as NULL
+							if ( !empty ($this_event) ) { array_push( $rebuilt_posts_array, $this_event ); }
+					
 						}
 					}
 				}
@@ -426,22 +411,12 @@ function mp_events_post( $mp_events ){
 						//Loop through each post set for this weekday
 						foreach( $monthday_array as $monthday_post ){
 							
-							//Get this post
-							$this_event = get_post( $monthday_post );
+							//Change date to correct date and make other modifications				
+							$this_event = mp_events_modify_event( $monthday_post, $current_day, $loop_cutoff_type );
 							
-							$start_time =  get_post_meta( $monthday_post, 'event_start_time', true );
-							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
-														
-							//Timezone
-							$time_zone =  get_post_meta( $monthday_post, 'event_time_zone', true );
-														
-							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time . ' ' . $time_zone;
+							//Add this event to the array if it isn't returned as NULL
+							if ( !empty ($this_event) ) { array_push( $rebuilt_posts_array, $this_event ); }
 							
-							//Add the date to the permalink
-							new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
-														
-							array_push( $rebuilt_posts_array, $this_event );
 						}
 					}
 				}
@@ -456,21 +431,12 @@ function mp_events_post( $mp_events ){
 						//Loop through each post set for this year day
 						foreach( $monthday_array as $monthday_post ){
 							
-							//Get this post
-							$this_event = get_post( $monthday_post );
+							//Change date to correct date and make other modifications				
+							$this_event = mp_events_modify_event( $monthday_post, $current_day, $loop_cutoff_type );
 							
-							$start_time =  get_post_meta( $monthday_post, 'event_start_time', true );
-							$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
-														
-							//Timezone
-							$time_zone =  get_post_meta( $monthday_post, 'event_time_zone', true );
+							//Add this event to the array if it isn't returned as NULL
+							if ( !empty ($this_event) ) { array_push( $rebuilt_posts_array, $this_event ); }
 							
-							
-														
-							//Reset the date
-							$this_event->post_date = $current_day . ' ' . $start_time . ' ' . $time_zone;
-							
-							array_push( $rebuilt_posts_array, $this_event );
 						}
 					}
 				}
@@ -482,7 +448,7 @@ function mp_events_post( $mp_events ){
 		//End loop through date range
 		}
 						
-		//If this is not a monthly query
+		//If this is not a days per page query - meaning it is a posts per page query
 		if ( $loop_cutoff_type != 'days_per_page' ){
 			//If the length of $rebuilt_posts_array is longer than $posts_per_page 
 			//(This happens if there is more than 1 event per day
@@ -560,17 +526,74 @@ class mp_events_set_permalink_filter{
 	
 }
 
-function mp_events_timezone( $time_zone ){
+/**    Returns the offset from the origin timezone to the remote timezone, in seconds.
+*    @param $remote_tz;
+*    @param $origin_tz; If null the servers current timezone is used as the origin.
+*    @return int;
+*/
+function mp_events_get_timezone_offset($remote_tz, $origin_tz = null) {
+    if($origin_tz === null) {
+        if(!is_string($origin_tz = date_default_timezone_get())) {
+            return false; // A UTC timestamp was returned -- bail out!
+        }
+    }
+    $origin_dtz = new DateTimeZone($origin_tz);
+    $remote_dtz = new DateTimeZone($remote_tz);
+    $origin_dt = new DateTime("now", $origin_dtz);
+    $remote_dt = new DateTime("now", $remote_dtz);
+    $offset = $origin_dtz->getOffset($origin_dt) - $remote_dtz->getOffset($remote_dt);
+    return $offset;
+}
+
+/**    
+*   Modifies the event, adds the date from the date loop using the $current_date variable
+*/
+function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 	
-	echo $time_zone;
+	//Get this post
+	$this_event = get_post( $post_id );
 	
-	if ( isset( $time_zone ) ){ 
-		$dateTime = new DateTime(); 
-		$dateTime->setTimeZone(new DateTimeZone('America/New_York')); 
-		return $dateTime->format('T'); 
+	//Start Time 
+	$start_time =  get_post_meta( $post_id, 'event_start_time', true );
+	$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
+	
+	//End Time 
+	$end_time =  get_post_meta( $post_id, 'event_start_time', true );
+	$end_time = !empty ( $end_time ) ? $end_time . ':00' : $start_time;				
+	
+	//Timezone
+	$time_zone =  get_post_meta( $post_id, 'event_time_zone', true );
+	
+	//If this query is a posts per page query
+	if ( $loop_cutoff_type == 'posts_per_page' ){
+		
+		//If this event is in the future according to "now" and this is a posts per page
+		if ( strtotime( $current_day . ' ' . $end_time . ' ' . $time_zone ) > strtotime( 'now' ) ){
+									
+			//Reset the date
+			$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day . ' ' . $start_time, $time_zone );
+			
+			//Add the date to the permalink
+			new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
+			
+			return $this_event;
+			
+		}
+		//If this event is not in the future, return NULL
+		else{
+			return NULL;	
+		}
 	}
-	else {
-		return;
+	//If this is a days per page query
+	else{
+		
+		//Reset the date
+		$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day . ' ' . $start_time, $time_zone );
+		
+		//Add the date to the permalink
+		new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
+		
+		return $this_event;
 	}
 								
 }
