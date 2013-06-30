@@ -76,6 +76,13 @@ function mp_events_create_meta_box(){
 			'field_value' => ''
 		),
 		array(
+			'field_id'			=> 'event_street_address',
+			'field_title' 	=> __( 'Street Address', 'mp_events'),
+			'field_description' 	=> 'The street address of this event.',
+			'field_type' 	=> 'textbox',
+			'field_value' => ''
+		),
+		array(
 			'field_id'			=> 'event_city_country',
 			'field_title' 	=> __( 'City/Country', 'mp_events'),
 			'field_description' 	=> 'EG: Toronto, Canada',

@@ -8,15 +8,11 @@ function mp_events_single_event_shortcode(){
 	
 	$post_id = get_the_ID();
 	
-	//Set Timezone to last timezone on earth so events stay 
-	date_default_timezone_set('America/New_York');
-	
 	//Check if the ?mp_event_date url variable is set
 	if ( isset( $_GET['mp_event_date'] ) ) {
 		
 		//Get the date from the URL
 		$url_date =  $_GET['mp_event_date'];
-		echo $url_date;
 		$url_date = strtotime(  $url_date );
 		$event_start_date = mysql2date('D, F j, Y', $url_date );
 				
@@ -28,18 +24,24 @@ function mp_events_single_event_shortcode(){
 		
 	}
 	
-	//Event start Time
+	//Event Start Time
 	$event_start_time = date('g:i A', strtotime( get_post_meta( $post_id, 'event_start_time', true ) ) );
 	
 	//Event End Time
 	$event_end_time = get_post_meta( $post_id, 'event_end_time', true ); 
 	$event_end_time = !empty( $event_end_time ) ? date('g:i A', strtotime( $event_end_time ) ) : NULL;	
 	
+	//Event TimeZone
+	$event_time_zone = get_post_meta( $post_id, 'event_time_zone', true ); 
+	
 	//Map URL
 	$event_map_url = get_post_meta( $post_id, 'event_map_url', true );
 	
 	//Location name
 	$event_location_name = get_post_meta( $post_id, 'event_location_name', true );
+	
+	//Street Address
+	$event_street_address = get_post_meta( $post_id, 'event_street_address', true );
 	
 	//Event City and Country
 	$event_city_country = get_post_meta( $post_id, 'event_city_country', true );
@@ -50,17 +52,17 @@ function mp_events_single_event_shortcode(){
 	$output_html .= '<ul class="mp-events-ul">';
 		
 		//Start time
-		$output_html .=  '<li class="mp-events-li">' . $event_start_date . ' @ ' .  $event_start_time;
+		$output_html .=  '<li class="mp-events-li">' . $event_start_date . ' @ ' .  $event_start_time . ' ' . $event_time_zone;
 		
 		//End Time
 		$output_html .= !empty( $event_end_time ) ? ' - ' . $event_end_time . '</li>' : '</li>';
 		
-		//Map and location
+		//Map, location, and address
 		if ( !empty( $event_location_name ) && !empty( $event_city_country ) ){
 			
 			//Map link available
 			if ( !empty( $event_map_url ) ) { 
-				$output_html .= '<li class="mp-events-li"><a target="_blank" href="' . $event_map_url . '">' . $event_location_name .', ' . $event_city_country . '</a></li>';
+				$output_html .= '<li class="mp-events-li"><a target="_blank" href="' . $event_map_url . '">' . $event_location_name .', ' . $event_city_country . ',' . $event_street_address . '</a></li>';
 			} 
 			//No map link available
 			else{ 
