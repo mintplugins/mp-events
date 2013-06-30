@@ -3,7 +3,7 @@
 Plugin Name: MP Events
 Plugin URI: http://moveplugins.com
 Description: Create events.
-Version: beta1.0.0.0
+Version: beta1.0.0.4
 Author: Move Plugins
 Author URI: http://moveplugins.com
 Text Domain: mp_events
@@ -121,7 +121,7 @@ function mp_events_include_files(){
 		/**
 		 * Update script - keeps this plugin up to date
 		 */
-		//require( MP_EVENTS_PLUGIN_DIR . 'includes/updater/mp-events-update.php' );
+		require( MP_EVENTS_PLUGIN_DIR . 'includes/updater/mp-events-update.php' );
 				
 		/**
 		 * Events Custom Post Type
