@@ -9,7 +9,7 @@ function mp_events( $query ) {
 		
 		//If that post type is mp_event
 		if( $query->query['post_type'] == 'mp_event' ) {
-										
+													
 			//Since $query->set is not working for secondary loops, we'll use a global variable for now :( <-- sad face
 			global $actual_posts_per_page;
 			
@@ -98,6 +98,9 @@ add_action ( 'pre_get_posts', 'mp_events', 1 );
 */
 function mp_events_post( $mp_events ){
 	
+	//Make sure this doesn't affect other loops on this page
+	remove_filter ( 'the_posts', 'mp_events_post' );
+		
 	//Main query (page if page.php, archive if archive.php etc)
 	global $wp_query;
 	
@@ -106,7 +109,7 @@ function mp_events_post( $mp_events ){
 	
 	//Since $query->set is not working for secondary loops, we'll use a global variable for now :( <-- sad face
 	global $actual_posts_per_page;
-		
+			
 	//Set the date for single event pages to the URL passed date
 	if ( is_single() && !isset( $wp_query->queried_object->post_type ) ){ //$wp_query->queried_object->post_type is NOT set on single event pages
 		
@@ -116,6 +119,9 @@ function mp_events_post( $mp_events ){
 		
 		return $mp_events;
 				
+	}
+	elseif( count( $mp_events ) == 0 ){
+		return $mp_events;
 	}
 	else{
 					
@@ -479,11 +485,10 @@ function mp_events_post( $mp_events ){
 			$rebuilt_posts_array = empty( $rebuilt_posts_array ) ? $empty_post : $rebuilt_posts_array;
 		
 		}
-		//Make sure this doesn't affect other loops on this page
-		remove_filter ( 'the_posts', 'mp_events_post' );
 				
 		return $rebuilt_posts_array;
 	}
+
 }
 
 /**
