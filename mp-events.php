@@ -3,7 +3,7 @@
 Plugin Name: MP Events
 Plugin URI: http://moveplugins.com
 Description: Create events.
-Version: beta1.0.0.8
+Version: beta1.0.0.9
 Author: Move Plugins
 Author URI: http://moveplugins.com
 Text Domain: mp_events
