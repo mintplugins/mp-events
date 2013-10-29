@@ -1,6 +1,6 @@
 <?php
 /**
-* Filter function ehich inserts the shortcode into the content
+* Filter function which inserts the shortcode into the content
 */
 function mp_events_the_content_filter( $content ){
 	

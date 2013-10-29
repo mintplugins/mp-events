@@ -523,7 +523,7 @@ class mp_events_set_permalink_filter{
 		global $post;	
 				
 		if ( $post->ID == $this->_args['post_id'] ){
-			return add_query_arg( array('mp_event_date' => $post->post_date ), $url);
+			return add_query_arg( array('mp_event_date' => urlencode($post->post_date) ), $url);
 		}else{
 			return $url;	
 		}

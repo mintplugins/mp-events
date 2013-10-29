@@ -12,10 +12,9 @@ function mp_events_single_event_shortcode(){
 	if ( isset( $_GET['mp_event_date'] ) ) {
 		
 		//Get the date from the URL
-		$url_date =  $_GET['mp_event_date'];
+		$url_date =  urldecode($_GET['mp_event_date']);
 		$url_date = strtotime(  $url_date );
-		$event_start_date = mysql2date('D, F j, Y', $url_date );
-				
+		$event_start_date = date('D, F j, Y', $url_date);
 	}
 	//Otherwise get the date from the post meta
 	else{

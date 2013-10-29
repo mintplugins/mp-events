@@ -36,14 +36,16 @@ function mp_events_create_meta_box(){
 			'field_title' 	=> __( 'Event Start Date  (Required)', 'mp_events'),
 			'field_description' 	=> 'The date of this event. Format: yyyy-mm-dd',
 			'field_type' 	=> 'date',
-			'field_value' => ''
+			'field_value' => '',
+			'field_required' => true
 		),
 		array(
 			'field_id'			=> 'event_start_time',
 			'field_title' 	=> __( 'Event Start Time (Required)', 'mp_events'),
 			'field_description' 	=> 'The start time for this event. Format: 05:30:PM',
 			'field_type' 	=> 'time',
-			'field_value' => ''
+			'field_value' => '',
+			'field_required' => true
 		),
 		array(
 			'field_id'			=> 'event_end_time',
