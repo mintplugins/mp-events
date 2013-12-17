@@ -1,5 +1,5 @@
 .mp-events-holder{
-	
+	display:inline-block;
 }
 .mp-events-ul{
 	margin:0px;
@@ -20,7 +20,7 @@
 	display:inline-block;
 	box-sizing: border-box; 
 	float:left;
-	width:13.6%;
+	width: 14.28%;
 	height:100px;
 	border-bottom:1px solid #ddd;	
 	border-left:1px solid #ddd;	

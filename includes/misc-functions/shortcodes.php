@@ -143,17 +143,22 @@ function mp_events_calendar_shortcode( $atts ){
 	
 	if ( $calendar_posts->have_posts() ) {
 		
+		//Get Previous Month
+		$last_month = new DateTime($current_month);
+  		$last_month->modify('-1 month');
+				
 		//Link to previous month
-		$output_html = '<a href="' . add_query_arg( array( 'mp_events_month' => date( 'm', strtotime( 'first day of last month', strtotime( $current_month ) ) ), 'mp_events_year' => date( 'Y', strtotime( 'first day of last month', strtotime( $current_month ) ) ) ), get_permalink() ) . '" >← </a>';
+		$output_html = '<a href="' . add_query_arg( array( 'mp_events_month' => $last_month->format('m'), 'mp_events_year' => $last_month->format('Y') ), get_permalink() ) . '" >← </a>';
 		
 		//Show current month
 		$output_html .= date( 'F Y', strtotime( $current_month ) );
 		
-		//Used in Link to next month
-		$first_day_of_next_month = strtotime( 'first day of next month', strtotime( $current_month ) );
+		//Get Next Month
+		$next_month = new DateTime($current_month);
+  		$next_month->modify('+1 month');
 		
 		//Link to next month
-		$output_html .= '<a href="' . add_query_arg( array( 'mp_events_month' => date( 'm', $first_day_of_next_month ), 'mp_events_year' => date( 'Y', $first_day_of_next_month ) ), get_permalink() ) . '" > →</a>';
+		$output_html .= '<a href="' . add_query_arg( array( 'mp_events_month' => $next_month->format('m'), 'mp_events_year' => $next_month->format('Y') ), get_permalink() ) . '" > →</a>';
 					 			
 		//Set counter
 		$counter = 0;
@@ -184,12 +189,12 @@ function mp_events_calendar_shortcode( $atts ){
 
 			}
 			
-			//First week class
+			//Today's class
 			if ($current_time == strtotime( date( 'Y-m-d' ) ) ){
 				$li_class_output .=  ' mp-events-today';
 			}
 			
-			//Today's class
+			//First week class
 			if ($counter <= 6 ){
 				$li_class_output .=  ' mp-events-first-week';
 			}
@@ -239,6 +244,10 @@ function mp_events_calendar_shortcode( $atts ){
 		
 		$output_html .= '</div>';
 		
+	}
+	
+	else{
+		$output_html = __( "No Events!", 'mp_events' );	
 	}
 		
 	//Return
