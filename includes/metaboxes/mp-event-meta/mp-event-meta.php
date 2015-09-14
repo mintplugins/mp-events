@@ -15,23 +15,13 @@ function mp_events_create_meta_box(){
 		'metabox_context' => 'advanced', 
 		'metabox_priority' => 'low' 
 	);
-	
-	//Get all Timezones
-	$timezone_identifiers = DateTimeZone::listAbbreviations();
-	
-	//Default empty option at the top 
-	$timezone_select_array[NULL] = 'None';
-	foreach( $timezone_identifiers as $abbr => $timezone ){
-		$timezone_select_array[strtoupper($abbr)] = $timezone[0]['timezone_id'];
-	
-	}
-		
+			
 	/**
 	 * Array which stores all info about the options within the metabox
 	 *
 	 */
 	$mp_events_items_array = array(
-		array(
+		'event_start_date' => array(
 			'field_id'			=> 'event_start_date',
 			'field_title' 	=> __( 'Event Start Date  (Required)', 'mp_events'),
 			'field_description' 	=> 'The date of this event. Format: yyyy-mm-dd',
@@ -39,30 +29,28 @@ function mp_events_create_meta_box(){
 			'field_value' => '',
 			'field_required' => true
 		),
-		array(
+		'event_start_time' => array(
 			'field_id'			=> 'event_start_time',
-			'field_title' 	=> __( 'Event Start Time (Required)', 'mp_events'),
-			'field_description' 	=> 'The start time for this event. Format: 05:30:PM',
-			'field_type' 	=> 'time',
+			'field_title' 	=> __( 'Event Start Time', 'mp_events'),
+			'field_description' 	=> 'Enter a description for the start time. Can be multiple times if needed. EG: 9:00am, 10:30am, and 7:30PM EST.',
+			'field_type' 	=> 'textarea',
 			'field_value' => '',
-			'field_required' => true
 		),
-		array(
+		'event_end_date' => array(
+			'field_id'			=> 'event_end_date',
+			'field_title' 	=> __( 'Event End Date', 'mp_events'),
+			'field_description' 	=> 'The date when this event ends. Format: yyyy-mm-dd',
+			'field_type' 	=> 'date',
+			'field_value' => '',
+		),
+		'event_end_time' => array(
 			'field_id'			=> 'event_end_time',
 			'field_title' 	=> __( 'Event End Time', 'mp_events'),
-			'field_description' 	=> 'The end time for this event. Format: 05:30:PM',
-			'field_type' 	=> 'time',
-			'field_value' => ''
-		),
-		array(
-			'field_id'			=> 'event_time_zone',
-			'field_title' 	=> __( 'Event Time Zone', 'mp_events'),
-			'field_description' 	=> 'The Time Zone for this event.',
-			'field_type' 	=> 'select',
+			'field_description' 	=> 'Enter a description for the end time.',
+			'field_type' 	=> 'textarea',
 			'field_value' => '',
-			'field_select_values' => $timezone_select_array
 		),
-		array(
+		'event_repeat' => array(
 			'field_id'			=> 'event_repeat',
 			'field_title' 	=> __( 'Event Repeat', 'mp_events'),
 			'field_description' 	=> 'Does this event repeat?',
@@ -70,28 +58,23 @@ function mp_events_create_meta_box(){
 			'field_value' => '',
 			'field_select_values' => array( 'none' => 'None', 'daily' => 'Every Day', 'weekly' => 'Every Week', 'monthly' => 'Every Month', 'yearly' => 'Every Year' )
 		),
-		array(
-			'field_id'			=> 'event_location_name',
-			'field_title' 	=> __( 'Location Name', 'mp_events'),
-			'field_description' 	=> 'The name of location of this event.',
-			'field_type' 	=> 'textbox',
+		'event_repeat_end_date' => array(
+			'field_id'			=> 'event_repeat_end_date',
+			'field_title' 	=> __( 'Event Repeat End Date', 'mp_events'),
+			'field_description' 	=> 'When does this event stop repeating? Leave blank for infinite repeating.',
+			'field_type' 	=> 'date',
+			'field_value' => '',
+			'field_conditional_id' => 'event_repeat',
+			'field_conditional_values' => array( 'daily', 'weekly', 'monthly', 'yearly' ),
+		),
+		'event_address' => array(
+			'field_id'			=> 'event_address',
+			'field_title' 	=> __( 'Address', 'mp_events'),
+			'field_description' 	=> 'The address of this event.',
+			'field_type' 	=> 'textarea',
 			'field_value' => ''
 		),
-		array(
-			'field_id'			=> 'event_street_address',
-			'field_title' 	=> __( 'Street Address', 'mp_events'),
-			'field_description' 	=> 'The street address of this event.',
-			'field_type' 	=> 'textbox',
-			'field_value' => ''
-		),
-		array(
-			'field_id'			=> 'event_city_country',
-			'field_title' 	=> __( 'City/Country', 'mp_events'),
-			'field_description' 	=> 'EG: Toronto, Canada',
-			'field_type' 	=> 'textbox',
-			'field_value' => ''
-		),
-		array(
+		'event_map_url' => array(
 			'field_id'			=> 'event_map_url',
 			'field_title' 	=> __( 'Map URL', 'mp_events'),
 			'field_description' 	=> 'Enter a link to a map URL (EG: Google Maps)',
