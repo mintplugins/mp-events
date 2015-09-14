@@ -25,4 +25,4 @@ function mp_events_calendar_shortcode_insert(){
 	
 	new MP_CORE_Shortcode_Insert($args);	
 }
-add_action( 'init', 'mp_events_calendar_shortcode_insert' );
+//add_action( 'init', 'mp_events_calendar_shortcode_insert' );
