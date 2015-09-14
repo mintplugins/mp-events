@@ -1,41 +1,36 @@
-=== Mint Plugins Core ===
+=== MP Events ===
 Contributors: johnstonphilip
 Donate link: http://mintplugins.com/
 Tags: message bar, header
-Requires at least: 3.0.1
-Tested up to: 3.5
-Stable tag: 4.3
+Requires at least: 3.5
+Tested up to: 4.3
+Stable tag: 1.0.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-This plugin gives developers access to a core set of classes for creating Settings, Metaboxes, Widgets, Plugins and more.
+Create Events. Display them with themes or other plugins.
 
 == Description ==
 
-This plugin gives developers access to a core set of classes for creating Settings, Metaboxes, Widgets, Plugins and more.
-
+Create Events. Display them with themes or other plugins. See "MP Stacks + EventGrid" for a great and free displaying option.
 
 == Installation ==
 
 This section describes how to install the plugin and get it working.
 
-1. Upload the 'message-bar' folder to the `/wp-content/plugins/` directory
+1. Upload the 'mp-events' folder to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Go to Settings > Message Bar and fill out the options. 
+3. Go to Events in your dashboard to set up events.
 
 == Frequently Asked Questions ==
 
 = What do I do with this?  =
 
-After you install, make sure to fill out all options under the Settings > Message Bar panel in the WordPress admin area.
+Create Events
 
 == Screenshots ==
 
-1. This is a screenshot of the Message Bar in action.
-
-2. This is a screenshot of the Message Bar option.
-
 == Changelog ==
 
-= 1.0 =
+= 1.0.0.0 = September 14, 2015
 * Original release

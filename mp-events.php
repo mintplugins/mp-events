@@ -2,8 +2,8 @@
 /*
 Plugin Name: MP Events
 Plugin URI: http://mintplugins.com
-Description: Create events.
-Version: beta1.0.1.1
+Description: Create events. 
+Version: 1.0.0.0
 Author: Mint Plugins
 Author URI: http://mintplugins.com
 Text Domain: mp_events
