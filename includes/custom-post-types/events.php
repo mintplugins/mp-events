@@ -10,10 +10,10 @@
  * Event Custom Post Type
  */
 function mp_events_post_type() {
-	
+				
 		$events_labels =  apply_filters( 'mp_events_events_labels', array(
-			'name' 				=> 'Events',
-			'singular_name' 	=> 'Event',
+			'name' 				=> 'MP Events',
+			'singular_name' 	=> 'MP Event',
 			'add_new' 			=> __('Add New', 'mp_events'),
 			'add_new_item' 		=> __('Add New Event', 'mp_events'),
 			'edit_item' 		=> __('Edit Event', 'mp_events'),
@@ -24,7 +24,7 @@ function mp_events_post_type() {
 			'not_found' 		=>  __('No Events found', 'mp_events'),
 			'not_found_in_trash'=> __('No Events found in Trash', 'mp_events'), 
 			'parent_item_colon' => '',
-			'menu_name' 		=> __('Events', 'mp_events')
+			'menu_name' 		=> __('MP Events', 'mp_events')
 		) );
 		
 			
@@ -47,7 +47,7 @@ function mp_events_post_type() {
 		
 		//new MP_Core_Custom_Post_Type_With_Dates('mp_event', apply_filters( 'mp_events_post_type_args', $events_args ) );
 }
-add_action( 'init', 'mp_events_post_type', 0 );
+add_action( 'init', 'mp_events_post_type' );
 
 /**
  * Calendars Taxonomy
@@ -124,7 +124,7 @@ function mp_events_show_each_calendar_in_menu(){
 		add_submenu_page( 'edit.php?post_type=mp_event', $calendar, $calendar, 'manage_options', add_query_arg( array('mp_calendars' => $id), 'edit.php?post_type=mp_event' ) );
 	}	
 }
-add_action('admin_menu', 'mp_events_show_each_calendar_in_menu');
+//add_action('admin_menu', 'mp_events_show_each_calendar_in_menu');
 
 /**
  * Rewrite rules for dates
@@ -140,34 +140,34 @@ function mp_events_rewrites($rules){
 			"{$slug}/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$" => 'index.php?mp_events_year=$matches[1]&mp_events_month=$matches[2]&mp_events_day=$matches[3]&feed=$matches[4]' . '&post_type=' .  $post_type,
 			"{$slug}/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$" => 'index.php?mp_events_year=$matches[1]&mp_events_month=$matches[2]&mp_events_day=$matches[3]&feed=$matches[4]' . '&post_type=' .  $post_type,
 			
-			//events/2013/05/23/page/1/
+			//events/2014/05/23/page/1/
 			"{$slug}/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/page/?([0-9]{1,})/?$" => 'index.php?mp_events_year=$matches[1]&mp_events_month=$matches[2]&mp_events_day=$matches[3]&paged=$matches[4]' . '&post_type=' .  $post_type,
 			
-			//events/2013/05/23/
+			//events/2014/05/23/
 			"{$slug}/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/?$" => 'index.php?mp_events_year=$matches[1]&mp_events_month=$matches[2]&mp_events_day=$matches[3]' . '&post_type=' .  $post_type,
 			
-			//events/2013/05/23/feed/rss2/
+			//events/2014/05/23/feed/rss2/
 			"{$slug}/([0-9]{4})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$" => 'index.php?mp_events_year=$matches[1]&mp_events_month=$matches[2]&feed=$matches[3]' . '&post_type=' .  $post_type,
 			
-			//events/2013/05/23/feed/rss2/
+			//events/2014/05/23/feed/rss2/
 			"{$slug}/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$" => 'index.php?mp_events_year=$matches[1]&mp_events_month=$matches[2]&feed=$matches[3]' . '&post_type=' .  $post_type,
 			
-			//events/2013/05/23/page/1/
+			//events/2014/05/23/page/1/
 			"{$slug}/([0-9]{4})/([0-9]{1,2})/page/?([0-9]{1,})/?$" => 'index.php?mp_events_year=$matches[1]&mp_events_month=$matches[2]&paged=$matches[3]' . '&post_type=' .  $post_type,
 			
-			//events/2013/05/23/page/1/
+			//events/2014/05/23/page/1/
 			"{$slug}/([0-9]{4})/([0-9]{1,2})/?$" => 'index.php?mp_events_year=$matches[1]&mp_events_month=$matches[2]' . '&post_type=' .  $post_type,
 			
-			//events/2013/05/23/feed/rss2/
+			//events/2014/05/23/feed/rss2/
 			"{$slug}/([0-9]{4})/feed/(feed|rdf|rss|rss2|atom)/?$" => 'index.php?mp_events_year=$matches[1]&feed=$matches[2]' . '&post_type=' .  $post_type,
 			
-			//events/2013/05/23/feed/rss2/
+			//events/2014/05/23/feed/rss2/
 			"{$slug}/([0-9]{4})/(feed|rdf|rss|rss2|atom)/?$" => 'index.php?mp_events_year=$matches[1]&feed=$matches[2]' . '&post_type=' .  $post_type,
 			
-			//events/2013/page/1
+			//events/2014/page/1
 			"{$slug}/([0-9]{4})/page/?([0-9]{1,})/?$" => 'index.php?mp_events_year=$matches[1]&paged=$matches[2]' . '&post_type=' .  $post_type,
 			
-			//events/2013/
+			//events/2014/
 			"{$slug}/([0-9]{4})/?$" => 'index.php?mp_events_year=$matches[1]' . '&post_type=' .  $post_type,
 			
 			//events/page/1
@@ -176,7 +176,7 @@ function mp_events_rewrites($rules){
 			//calendars/custom-slug/page/1
 			"calendars/([^/]*)/page/([0-9]{1,})/?$" => 'index.php?mp_calendars=$matches[1]&paged=$matches[2]',
 			
-			//calendars/custom-slug/2013/01/
+			//calendars/custom-slug/2014/01/
 			"calendars/([^/]*)/([0-9]{4})/([0-9]{1,2})/?$" => 'index.php?mp_calendars=$matches[1]&mp_events_year=$matches[2]&mp_events_month=$matches[3]',
 		);
 		
