@@ -1,6 +1,6 @@
-=== Move Plugins Core ===
+=== Mint Plugins Core ===
 Contributors: johnstonphilip
-Donate link: http://moveplugins.com/
+Donate link: http://mintplugins.com/
 Tags: message bar, header
 Requires at least: 3.0.1
 Tested up to: 3.5
