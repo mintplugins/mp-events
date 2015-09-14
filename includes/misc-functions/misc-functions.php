@@ -34,3 +34,75 @@ function mp_events_the_content_filter( $content ){
 		
 }
 add_filter( 'the_content', 'mp_events_the_content_filter' );
+
+/**
+ * Get the MP Event Start Date from either the URL or the post itself - depending on what is available
+ *
+ * @since    1.0.0
+ * @link     http://mintplugins.com/doc/
+ * @see      function_name()
+ * @param    $post_id - The id of the mp_event post in question for which we want the event date.
+ * @return   The date string formatted.
+ */
+function mp_events_get_mp_event_start_date( $post_id ){
+	
+	$date_format = get_option( 'date_format' );
+	
+	//If there is a date in the URL - get it from there.
+	if ( isset( $_GET['mp_event_start_date'] ) ){
+		//Get the date from the URL
+		$url_date = urldecode($_GET['mp_event_start_date']);
+		$event_start_date = mp_events_format_mp_event_date( $url_date );
+	}
+	//Otherwise get the date from the post meta
+	else{
+		$event_start_date = mp_events_format_mp_event_date( get_post_meta( $post_id, 'event_start_date', true ) );
+	}
+	
+	return $event_start_date;
+}
+
+/**
+ * Get the MP Event End Date from either the URL or the post itself - depending on what is available
+ *
+ * @since    1.0.0
+ * @link     http://mintplugins.com/doc/
+ * @see      function_name()
+ * @param    $post_id - The id of the mp_event post in question for which we want the event date.
+ * @return   The date string formatted.
+ */
+function mp_events_get_mp_event_end_date( $post_id ){
+	
+	$date_format = get_option( 'date_format' );
+	
+	//If there is a date in the URL - get it from there.
+	if ( isset( $_GET['mp_event_end_date'] ) ){
+		//Get the date from the URL
+		$url_date = urldecode($_GET['mp_event_end_date']);
+		$event_end_date = mp_events_format_mp_event_date( $url_date );
+	}
+	//Otherwise get the date from the post meta
+	else{
+		$event_end_date = mp_events_format_mp_event_date( get_post_meta( $post_id, 'event_end_date', true ) );
+	}
+	
+	return $event_end_date;
+}
+
+/**
+ * Format the MP Event Date 
+ *
+ * @since    1.0.0
+ * @link     http://mintplugins.com/doc/
+ * @see      function_name()
+ * @param    $start_or_end_date_string - The start date string we wish to format according the to WP date format settings.
+ * @return   The date string formatted.
+ */
+function mp_events_format_mp_event_date( $start_or_end_date_string ){
+	
+	$date_format = get_option( 'date_format' );
+	
+	$formatted_date = date($date_format, strtotime( $start_or_end_date_string ) );
+	
+	return $formatted_date;
+}
