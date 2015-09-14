@@ -1,21 +1,21 @@
 <?php
 /*
 Plugin Name: MP Events
-Plugin URI: http://moveplugins.com
+Plugin URI: http://mintplugins.com
 Description: Create events.
 Version: beta1.0.1.1
-Author: Move Plugins
-Author URI: http://moveplugins.com
+Author: Mint Plugins
+Author URI: http://mintplugins.com
 Text Domain: mp_events
 Domain Path: languages
 License: GPL2
 */
 
-/*  Copyright 2012  Phil Johnston  (email : phil@moveplugins.com)
+/*  Copyright 2015  Phil Johnston  (email : phil@mintplugins.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as 
-    published by the Free Software Move Plugins Core.
+    published by the Free Software Mint Plugins Core.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,7 +24,7 @@ License: GPL2
 
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
-    Move Plugins Core, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+    Mint Plugins Core, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 /*
@@ -162,11 +162,6 @@ function mp_events_include_files(){
 		 * Enqueue Scripts
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/enqueue-scripts.php' );
-		
-		/**
-		 * Settings
-		 */
-		require( MP_EVENTS_PLUGIN_DIR . 'includes/settings/general-settings/general-settings.php' );
 		
 					
 	}
