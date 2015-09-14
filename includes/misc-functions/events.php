@@ -3,7 +3,7 @@
 * Order events baed on their set date in the event_start_date meta field
 */
 function mp_events( $query ) {
-			
+
 	//If this is a post_type
 	if ( isset( $query->query['post_type'] ) ) {
 		
@@ -32,7 +32,7 @@ function mp_events( $query ) {
 			//Order by meta_key
 			$query->set( 'order', 'ASC' );
 			
-			if ( !is_admin() ){
+			if ( !is_admin() || ( is_admin() && defined( 'DOING_AJAX' ) && DOING_AJAX ) ){
 				
 				//Make the filters not suppressed in the Wp_Query class
 				$query->set('suppress_filters', false);
@@ -74,7 +74,7 @@ function mp_events( $query ) {
 		//Order by meta_key
 		$query->set( 'order', 'ASC' );
 			
-		if ( !is_admin() ){
+		if ( !is_admin() || ( is_admin() && defined( 'DOING_AJAX' ) && DOING_AJAX ) ){
 			
 			//Make the filters not suppressed in the Wp_Query class
 			$query->set('suppress_filters', false);
@@ -222,13 +222,6 @@ function mp_events_post( $mp_events ){
 		* Rebuild the posts array
 		*/
 		$rebuilt_posts_array = array();
-		
-		//Get user-selected, default timezone
-		$default_timezone = mp_core_get_option( 'mp_events_settings_general',  'mp_events_default_timezone' );
-		$default_timezone = !empty( $default_timezone ) ? $default_timezone : 'America/Los_Angeles';
-		
-		//Default Timezone - if events have no timezone selected, it will use this one
-		date_default_timezone_set($default_timezone);
 				
 		//Get year from the URL using the mp_events_custom_query
 		$year = isset( $mp_events_custom_query->query_vars['mp_events_year'] ) ? $mp_events_custom_query->query_vars['mp_events_year'] : date('Y');
@@ -269,27 +262,17 @@ function mp_events_post( $mp_events ){
 			foreach ( $mp_events as $mp_event ){
 				
 				//get start date of this post
-				$start_date =  get_post_meta( $mp_event->ID, 'event_start_date', true );	
+				$start_date = get_post_meta( $mp_event->ID, 'event_start_date', true );	
 				
-				//Get the start time for this event from the meta
-				$start_time =  get_post_meta( $mp_event->ID, 'event_start_time', true );
-				$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
-				
-				//End Time 
-				$end_time =  get_post_meta( $post_id, 'event_start_time', true );
-				$end_time = !empty ( $end_time ) ? $end_time . ':00' : $start_time;									
-				
-				//Timezone
-				$time_zone =  get_post_meta( $mp_event->ID, 'event_time_zone', true );
-				
-				//Get number of seconds difference between the event's timezone and the PHP current timezone
-				$time_zone_offset = !empty($time_zone) ? mp_events_get_timezone_offset($time_zone) : NULL;
+				//get end date of this post
+				$end_date = get_post_meta( $mp_event->ID, 'event_end_date', true );					
 								
-				//If this event is in the future according to "now" and this is a posts per page
-				if ( strtotime( $start_date . ' ' . $end_time . ' ' . $time_zone ) > strtotime( 'now' ) ){
+				//If this event is in the future according to "yesterday" and this is a posts per page
+				if ( strtotime( $start_date ) > strtotime( 'yesterday' ) ){
 												
 					//Reset the date
-					$mp_event->post_date = $start_date . ' ' . $start_time;
+					$mp_event->post_date = $start_date;
+					$mp_event->mp_event_end_date = $end_date;
 					
 					//Add this post into the return array of posts to show
 					array_push( $rebuilt_posts_array, $mp_event );
@@ -326,6 +309,14 @@ function mp_events_post( $mp_events ){
 						
 		//Set counter
 		$counter = 0;
+		
+		//Get the offset from the query
+		if ( isset( $mp_events_custom_query->query['offset'] ) ){
+			$offset = $mp_events_custom_query->query['offset'];
+		}
+		else{
+			$offset = 0;
+		}
 								
 		//Set type of loop cut off
 		$loop_cutoff_type = isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 'days_per_page' : 'posts_per_page';
@@ -333,17 +324,19 @@ function mp_events_post( $mp_events ){
 		//If the cutoff type has been passed to the query, use it, instead use the above setting
 		$loop_cutoff_type = isset( $mp_events_custom_query->query_vars['mp_events_days_per_page'] ) ? 'days_per_page' : $loop_cutoff_type;
 		
-		//Get the time right "now"		
-		$utc_right_now = strtotime("now");
+		//Get the time for "yesterday"		
+		$utc_yesterday = strtotime("yesterday");
+		
+		$total_loops_needed = $offset + $posts_per_page;
 		
 		/**
 		* If there ARE repeating posts in this query
 		* Loop through dates starting at current_day (set above)
 		*/
-		while ( $counter < $posts_per_page ){
+		while ( $counter < $total_loops_needed ){
 			
 			//Add correct amount to counter based on cutoff type 
-			$counter = $loop_cutoff_type == 'days_per_page' ? $counter + 1 : count( $rebuilt_posts_array );
+			$counter = $loop_cutoff_type == 'days_per_page' ? $counter + 1 : ( count( $rebuilt_posts_array ) - $offset );
 															
 			$current_time = strtotime($current_day);
 			
@@ -459,14 +452,16 @@ function mp_events_post( $mp_events ){
 			//If the length of $rebuilt_posts_array is longer than $posts_per_page 
 			//(This happens if there is more than 1 event per day
 			//Make sure we cut the array length off at the posts per page
-			$rebuilt_posts_array = array_slice( $rebuilt_posts_array, 0, $posts_per_page );
+						
+			$rebuilt_posts_array = array_slice( $rebuilt_posts_array, $offset, $posts_per_page );
+			
 		}
 		
 		//Offset posts based on previous offset number
 		$rebuilt_posts_array = array_slice( $rebuilt_posts_array, $day_offset );
 		
 		//Set the max number of pages in the Wp_query variable to 5 pages - if we are not showing a full month
-		!isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? $mp_events_custom_query->max_num_pages = 5 : 0;
+		$mp_events_custom_query->max_num_pages = !isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 5 : 0;
 														
 		//If there is nothing in the $rebuilt_posts_array
 		if ( empty( $rebuilt_posts_array ) ){
@@ -523,7 +518,10 @@ class mp_events_set_permalink_filter{
 		global $post;	
 				
 		if ( $post->ID == $this->_args['post_id'] ){
-			return add_query_arg( array('mp_event_date' => urlencode($post->post_date) ), $url);
+			return add_query_arg( array(
+				'mp_event_start_date' => urlencode($post->post_date) ,
+				'mp_event_end_date' => urlencode( $post->mp_events_end_date ),
+			), $url);
 		}else{
 			return $url;	
 		}
@@ -531,52 +529,50 @@ class mp_events_set_permalink_filter{
 	
 }
 
-/**    Returns the offset from the origin timezone to the remote timezone, in seconds.
-*    @param $remote_tz;
-*    @param $origin_tz; If null the servers current timezone is used as the origin.
-*    @return int;
-*/
-function mp_events_get_timezone_offset($remote_tz, $origin_tz = null) {
-    if($origin_tz === null) {
-        if(!is_string($origin_tz = date_default_timezone_get())) {
-            return false; // A UTC timestamp was returned -- bail out!
-        }
-    }
-    $origin_dtz = new DateTimeZone($origin_tz);
-    $remote_dtz = new DateTimeZone($remote_tz);
-    $origin_dt = new DateTime("now", $origin_dtz);
-    $remote_dt = new DateTime("now", $remote_dtz);
-    $offset = $origin_dtz->getOffset($origin_dt) - $remote_dtz->getOffset($remote_dt);
-    return $offset;
-}
-
-/**    
-*   Modifies the event, adds the date from the date loop using the $current_date variable
-*/
+/**
+ * Modifies the event, adds the date from the date loop using the $current_date variable
+ *
+ * @since   1.0.0
+ * @link    http://mintplugins.com/doc/
+ * @see     function_name()
+ * @param   str $post_id The ID of the mp_event post in question
+ * @param   str $current_day This is a date string for the current date in the loop. It is formatted like this: $year .'-' . $month . '-' . $day (1999-01-31)
+ * @param   str $loop_cutoff_type This is a string that tells us how this loop is being ended. Either "posts_per_page" or "days_per_page".
+ * @return  object The event object which will be used in the query.
+ */
 function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 	
 	//Get this post
 	$this_event = get_post( $post_id );
 	
-	//Start Time 
-	$start_time =  get_post_meta( $post_id, 'event_start_time', true );
-	$start_time = !empty ( $start_time ) ? $start_time . ':00' : NULL;
+	//get start date of this post
+	$start_date = strtotime( get_post_meta( $post_id, 'event_start_date', true ) );	
 	
-	//End Time 
-	$end_time =  get_post_meta( $post_id, 'event_start_time', true );
-	$end_time = !empty ( $end_time ) ? $end_time . ':00' : $start_time;				
+	//get end date of this post
+	$end_date = get_post_meta( $post_id, 'event_end_date', true );	
 	
-	//Timezone
-	$time_zone =  get_post_meta( $post_id, 'event_time_zone', true );
-	
+	//Check if there is an end date for repeating (if this event repeats)
+	$end_repeat_date = mp_core_get_post_meta( $post_id, 'event_repeat_end_date', 'infinite' );
+				
+	//Get the number of seconds between the start date and the end date
+	if ( !empty( $end_date ) ){
+		$seconds_between_start_and_end = strtotime( $end_date ) - $start_date;
+	}
+	else{
+		$seconds_between_start_and_end = 0;
+	}
+		
 	//If this query is a posts per page query
 	if ( $loop_cutoff_type == 'posts_per_page' ){
 		
-		//If this event is in the future according to "now" and this is a posts per page
-		if ( strtotime( $current_day . ' ' . $end_time . ' ' . $time_zone ) > strtotime( 'now' ) ){
+		$current_time = strtotime( $current_day );
+		
+		//If this event is in the future according to "yesterday" and this is a posts per page - and the end date hasn't "passed" (in the current loop) for this repeating event.
+		if ( $current_time > strtotime( 'yesterday' ) && ( $current_time < strtotime( $end_repeat_date ) || $end_repeat_date == 'infinite' ) ){
 									
 			//Reset the date
-			$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day . ' ' . $start_time, $time_zone );
+			$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day );
+			$this_event->mp_events_end_date = date( 'Y-m-d', strtotime( $this_event->post_date ) + $seconds_between_start_and_end );
 			
 			//Add the date to the permalink
 			new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
@@ -593,7 +589,8 @@ function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 	else{
 		
 		//Reset the date
-		$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day . ' ' . $start_time, $time_zone );
+		$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day );
+		$this_event->mp_events_end_date = date( 'Y-m-d', strtotime( $this_event->post_date ) + $seconds_between_start_and_end );
 		
 		//Add the date to the permalink
 		new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
