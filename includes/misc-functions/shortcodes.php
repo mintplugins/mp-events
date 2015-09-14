@@ -8,31 +8,20 @@ function mp_events_single_event_shortcode(){
 	
 	$post_id = get_the_ID();
 	
-	//Check if the ?mp_event_date url variable is set
-	if ( isset( $_GET['mp_event_date'] ) ) {
-		
-		//Get the date from the URL
-		$url_date =  urldecode($_GET['mp_event_date']);
-		$url_date = strtotime(  $url_date );
-		$event_start_date = date('D, F j, Y', $url_date);
-	}
-	//Otherwise get the date from the post meta
-	else{
-		
-		$event_start_date = date('D, F j, Y', strtotime( get_post_meta( $post_id, 'event_start_date', true ) ) );
-		
-	}
+	//Get format for date
+	$date_format = get_option( 'date_format' );
+	$time_format = get_option( 'time_format' );
 	
+	//Get the start date
+	$event_start_date = mp_events_get_mp_event_start_date( $post_id );
+
 	//Event Start Time
-	$event_start_time = date('g:i A', strtotime( get_post_meta( $post_id, 'event_start_time', true ) ) );
+	$event_start_time = date( $time_format, strtotime( get_post_meta( $post_id, 'event_start_time', true ) ) );
 	
 	//Event End Time
 	$event_end_time = get_post_meta( $post_id, 'event_end_time', true ); 
-	$event_end_time = !empty( $event_end_time ) ? date('g:i A', strtotime( $event_end_time ) ) : NULL;	
-	
-	//Event TimeZone
-	$event_time_zone = get_post_meta( $post_id, 'event_time_zone', true ); 
-	
+	$event_end_time = !empty( $event_end_time ) ? date( $time_format, strtotime( $event_end_time ) ) : NULL;	
+		
 	//Map URL
 	$event_map_url = get_post_meta( $post_id, 'event_map_url', true );
 	
@@ -51,7 +40,7 @@ function mp_events_single_event_shortcode(){
 	$output_html .= '<ul class="mp-events-ul">';
 		
 		//Start time
-		$output_html .=  '<li class="mp-events-li">' . $event_start_date . ' @ ' .  $event_start_time . ' ' . $event_time_zone;
+		$output_html .=  '<li class="mp-events-li">' . $event_start_date .  ' - ' . $event_start_time;
 		
 		//End Time
 		$output_html .= !empty( $event_end_time ) ? ' - ' . $event_end_time . '</li>' : '</li>';
