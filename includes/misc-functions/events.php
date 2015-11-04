@@ -114,8 +114,17 @@ function mp_events_post( $mp_events ){
 	if ( is_single() && !isset( $wp_query->queried_object->post_type ) ){ //$wp_query->queried_object->post_type is NOT set on single event pages
 		
 		//Get date from URL
-		$url_date = !empty( $_GET['mp_event_date'] ) ? $_GET['mp_event_date'] : $mp_events_custom_query->posts[0]->post_date;
-		$mp_events_custom_query->posts[0]->post_date = $url_date;
+		$url_start_date = !empty( $_GET['mp_event_start_date'] ) ? $_GET['mp_event_start_date'] : $mp_events_custom_query->posts[0]->post_date;
+		$url_end_date = !empty( $_GET['mp_event_end_date'] ) ? $_GET['mp_event_end_date'] : $mp_events_custom_query->posts[0]->post_date;
+		$mp_events_custom_query->posts[0]->post_date = $url_start_date;
+		$mp_events_custom_query->posts[0]->mp_events_end_date = $url_end_date;
+		
+		new mp_events_set_permalink_filter( array( 
+			'post_id' => $wp_query->queried_object_id,
+			'force_date_override' => true  
+			
+		) );
+		
 		
 		return $mp_events;
 				
@@ -252,6 +261,20 @@ function mp_events_post( $mp_events ){
 			$posts_per_page = $actual_posts_per_page; //$mp_events_custom_query->query_vars['actual_posts_per_page']
 		}
 		
+		//Set type of loop cut off
+		$loop_cutoff_type = isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 'days_per_page' : 'posts_per_page';
+		
+		//If the cutoff type has been passed to the query, use it, instead use the above setting
+		$loop_cutoff_type = isset( $mp_events_custom_query->query_vars['mp_events_days_per_page'] ) ? 'days_per_page' : $loop_cutoff_type;
+		
+		//Get the offset from the query
+		if ( isset( $mp_events_custom_query->query['offset'] ) ){
+			$offset = $mp_events_custom_query->query['offset'];
+		}
+		else{
+			$offset = 0;
+		}
+		
 		/**
 		* If there are NO repeating posts in this query
 		* Loop through posts
@@ -262,35 +285,27 @@ function mp_events_post( $mp_events ){
 			foreach ( $mp_events as $mp_event ){
 				
 				//get start date of this post
-				$start_date = get_post_meta( $mp_event->ID, 'event_start_date', true );	
+				$start_date = strtotime( get_post_meta( $mp_event->ID, 'event_start_date', true ) );	
 				
 				//get end date of this post
-				$end_date = get_post_meta( $mp_event->ID, 'event_end_date', true );					
+				$end_date = strtotime( mp_core_get_post_meta( $mp_event->ID, 'event_end_date', $start_date ) );					
 								
 				//If this event is in the future according to "yesterday" and this is a posts per page
-				if ( strtotime( $start_date ) > strtotime( 'yesterday' ) ){
-												
-					//Reset the date
-					$mp_event->post_date = $start_date;
-					$mp_event->mp_event_end_date = $end_date;
+				if ( $start_date > strtotime( 'yesterday' ) ){
 					
+					$this_event = mp_events_modify_event( $mp_event, date( 'Y-m-d', $start_date ), $loop_cutoff_type );
+				
 					//Add this post into the return array of posts to show
-					array_push( $rebuilt_posts_array, $mp_event );
+					array_push( $rebuilt_posts_array, $this_event );
 					
 				}
 			}
 			
 			//Set number of pages
-			$mp_events_custom_query->max_num_pages = ceil( count( $rebuilt_posts_array ) / $posts_per_page );
-			
-			//Set offset from the URL using the mp_events_custom_query.
-			$event_offset = $paged != 0 ? $paged * $posts_per_page - $posts_per_page  : 0;
-			
-			//If paged == 0, set it to be 1			
-			$paged = $paged == 0 ? 1 : $paged;
+			//$mp_events_custom_query->max_num_pages = ceil( count( $rebuilt_posts_array ) / $posts_per_page );
 			
 			//Offset posts based on page number and amount of posts per page
-			$rebuilt_posts_array = array_slice( $rebuilt_posts_array, $event_offset, $posts_per_page * $paged );
+			$rebuilt_posts_array = array_slice( $rebuilt_posts_array, $offset, $posts_per_page );
 		
 			//Return
 			return $rebuilt_posts_array;
@@ -317,12 +332,6 @@ function mp_events_post( $mp_events ){
 		else{
 			$offset = 0;
 		}
-								
-		//Set type of loop cut off
-		$loop_cutoff_type = isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 'days_per_page' : 'posts_per_page';
-		
-		//If the cutoff type has been passed to the query, use it, instead use the above setting
-		$loop_cutoff_type = isset( $mp_events_custom_query->query_vars['mp_events_days_per_page'] ) ? 'days_per_page' : $loop_cutoff_type;
 		
 		//Get the time for "yesterday"		
 		$utc_yesterday = strtotime("yesterday");
@@ -516,13 +525,18 @@ class mp_events_set_permalink_filter{
 	function append_query_string($url) {
 		
 		global $post;	
-				
-		if ( $post->ID == $this->_args['post_id'] ){
-			return add_query_arg( array(
-				'mp_event_start_date' => urlencode($post->post_date) ,
-				'mp_event_end_date' => urlencode( $post->mp_events_end_date ),
-			), $url);
-		}else{
+			
+		if ( isset( $post->ID ) && isset( $this->_args['post_id'] ) || isset( $this->_args['force_date_override'] ) ){
+			if ( $post->ID == $this->_args['post_id'] || isset( $this->_args['force_date_override'] )){
+				return add_query_arg( array(
+					'mp_event_start_date' => urlencode($post->post_date) ,
+					'mp_event_end_date' => urlencode( $post->mp_events_end_date ),
+				), $url);
+			}else{
+				return $url;	
+			}
+		}
+		else{
 			return $url;	
 		}
 	}
