@@ -337,7 +337,7 @@ function mp_events_post( $mp_events ){
 		$utc_yesterday = strtotime("yesterday");
 		
 		$total_loops_needed = $offset + $posts_per_page;
-		
+			
 		/**
 		* If there ARE repeating posts in this query
 		* Loop through dates starting at current_day (set above)
@@ -366,10 +366,15 @@ function mp_events_post( $mp_events ){
 						foreach( $single_events_array as $single_event ){
 							
 							//Change date to correct date and make other modifications				
-							$this_event = mp_events_modify_event( $single_event, $current_day, $loop_cutoff_type );
+							$this_event = mp_events_modify_event( $single_event, $current_day, $loop_cutoff_type );			
 							
 							//Add this event to the array if it isn't returned as NULL
-							if ( !empty ($this_event) ) { array_push( $rebuilt_posts_array, $this_event ); }
+							if ( !empty ($this_event) ) { 
+								array_push( $rebuilt_posts_array, $this_event ); 
+							}
+							else{
+								$total_loops_needed = $total_loops_needed -1;
+							}
 	
 						}
 					}
@@ -385,7 +390,12 @@ function mp_events_post( $mp_events ){
 					$this_event = mp_events_modify_event( $daily_post, $current_day, $loop_cutoff_type );
 					
 					//Add this event to the array if it isn't returned as NULL
-					if ( !empty ($this_event) ) { array_push( $rebuilt_posts_array, $this_event ); }
+					if ( !empty ($this_event) ) { 
+						array_push( $rebuilt_posts_array, $this_event ); 
+					}
+					else{
+						$total_loops_needed = $total_loops_needed -1;
+					}
 					
 				}
 			}
@@ -403,7 +413,12 @@ function mp_events_post( $mp_events ){
 							$this_event = mp_events_modify_event( $weekday_post, $current_day, $loop_cutoff_type );
 							
 							//Add this event to the array if it isn't returned as NULL
-							if ( !empty ($this_event) ) { array_push( $rebuilt_posts_array, $this_event ); }
+							if ( !empty ($this_event) ) { 
+								array_push( $rebuilt_posts_array, $this_event ); 
+							}
+							else{
+								$total_loops_needed = $total_loops_needed -1;
+							}
 					
 						}
 					}
@@ -423,7 +438,12 @@ function mp_events_post( $mp_events ){
 							$this_event = mp_events_modify_event( $monthday_post, $current_day, $loop_cutoff_type );
 							
 							//Add this event to the array if it isn't returned as NULL
-							if ( !empty ($this_event) ) { array_push( $rebuilt_posts_array, $this_event ); }
+							if ( !empty ($this_event) ) { 
+								array_push( $rebuilt_posts_array, $this_event ); 
+							}
+							else{
+								$total_loops_needed = $total_loops_needed -1;
+							}
 							
 						}
 					}
@@ -432,6 +452,7 @@ function mp_events_post( $mp_events ){
 			
 			//If there are any yearly posts
 			if (!empty( $yearly_posts ) ) {
+							
 				//Loop through each set of weekdays
 				foreach ($yearly_posts as $monthday_date => $monthday_array){
 					//If this monthday is the same as the current day we are looping through
@@ -440,10 +461,15 @@ function mp_events_post( $mp_events ){
 						foreach( $monthday_array as $monthday_post ){
 							
 							//Change date to correct date and make other modifications				
-							$this_event = mp_events_modify_event( $monthday_post, $current_day, $loop_cutoff_type );
+							$this_event = mp_events_modify_event( $monthday_post, $current_day, $loop_cutoff_type );							
 							
 							//Add this event to the array if it isn't returned as NULL
-							if ( !empty ($this_event) ) { array_push( $rebuilt_posts_array, $this_event ); }
+							if ( !empty ($this_event) ) { 
+								array_push( $rebuilt_posts_array, $this_event ); 
+							}
+							else{
+								$total_loops_needed = $total_loops_needed -1;
+							}
 							
 						}
 					}
@@ -455,6 +481,8 @@ function mp_events_post( $mp_events ){
 								
 		//End loop through date range
 		}
+		
+		
 						
 		//If this is not a days per page query - meaning it is a posts per page query
 		if ( $loop_cutoff_type != 'days_per_page' ){
@@ -465,7 +493,7 @@ function mp_events_post( $mp_events ){
 			$rebuilt_posts_array = array_slice( $rebuilt_posts_array, $offset, $posts_per_page );
 			
 		}
-		
+							
 		//Offset posts based on previous offset number
 		$rebuilt_posts_array = array_slice( $rebuilt_posts_array, $day_offset );
 		
@@ -474,6 +502,8 @@ function mp_events_post( $mp_events ){
 														
 		//If there is nothing in the $rebuilt_posts_array
 		if ( empty( $rebuilt_posts_array ) ){
+			
+			return NULL;
 			
 			$empty_post[0] = new stdClass();
 			$empty_post[0]->ID= -50;
@@ -583,7 +613,7 @@ function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 		
 		//If this event is in the future according to "yesterday" and this is a posts per page - and the end date hasn't "passed" (in the current loop) for this repeating event.
 		if ( $current_time > strtotime( 'yesterday' ) && ( $current_time < strtotime( $end_repeat_date ) || $end_repeat_date == 'infinite' ) ){
-									
+										
 			//Reset the date
 			$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day );
 			$this_event->mp_events_end_date = date( 'Y-m-d', strtotime( $this_event->post_date ) + $seconds_between_start_and_end );
@@ -596,6 +626,7 @@ function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 		}
 		//If this event is not in the future, return NULL
 		else{
+			
 			return NULL;	
 		}
 	}
