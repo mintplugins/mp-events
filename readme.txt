@@ -3,8 +3,8 @@ Contributors: johnstonphilip
 Donate link: http://mintplugins.com/
 Tags: message bar, header
 Requires at least: 3.5
-Tested up to: 4.5
-Stable tag: 1.0.0.2
+Tested up to: 4.6
+Stable tag: 1.0.0.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,11 @@ Create Events
 == Screenshots ==
 
 == Changelog ==
+
+= 1.0.0.3 = December 5, 2016
+* Fix: Number of events was incorrect if a repeating event is ended during our loop.
+* Added event video field
+* Simplified event edit screen
 
 = 1.0.0.2 = June 17, 2016
 * Fix bug with repeating events that have an end repeat date.

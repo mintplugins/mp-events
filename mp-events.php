@@ -2,8 +2,8 @@
 /*
 Plugin Name: MP Events
 Plugin URI: http://mintplugins.com
-Description: Create events. 
-Version: 1.0.0.2
+Description: Create events.
+Version: 1.0.0.3
 Author: Mint Plugins
 Author URI: http://mintplugins.com
 Text Domain: mp_events
@@ -13,18 +13,18 @@ License: GPL2
 
 /*  Copyright 2016  Phil Johnston  (email : phil@mintplugins.com)
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License, version 2, as 
-    published by the Free Software Mint Plugins Core.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License, version 2, as
+	published by the Free Software Mint Plugins Core.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Mint Plugins Core, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Mint Plugins Core, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 /*
@@ -34,7 +34,7 @@ License: GPL2
 */
 // Plugin version
 if( !defined( 'MP_EVENTS_VERSION' ) )
-	define( 'MP_EVENTS_VERSION', '1.0.0.2' );
+	define( 'MP_EVENTS_VERSION', '1.0.0.3' );
 
 // Plugin Folder URL
 if( !defined( 'MP_EVENTS_PLUGIN_URL' ) )
@@ -101,69 +101,69 @@ function mp_events_include_files(){
 	 * If mp_core isn't active, stop and install it now
 	 */
 	if (!function_exists('mp_core_textdomain')){
-				
+
 		/**
 		 * Include Plugin Checker
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . '/includes/plugin-checker/class-plugin-checker.php' );
-		
+
 		/**
 		 * Include Plugin Installer
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . '/includes/plugin-checker/class-plugin-installer.php' );
-		
+
 		/**
 		 * Check if wp_core in installed
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/plugin-checker/included-plugins/mp-core-check.php' );
-		
+
 	}
 	/**
 	 * Otherwise, if mp_core is active, carry out the plugin's functions
 	 */
 	else{
-		
+
 		/**
 		 * Update script - keeps this plugin up to date
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/updater/mp-events-update.php' );
-				
+
 		/**
 		 * Events Custom Post Type
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/custom-post-types/events.php' );
-		
+
 		/**
 		 * Events Metabox
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/metaboxes/mp-event-meta/mp-event-meta.php' );
-					
+
 		/**
 		 * Query Modifier
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/events.php' );
-		
+
 		/**
 		 * Shortcodes
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/shortcodes.php' );
-		
+
 		/**
 		 * Shortcode insert functions
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/shortcode-insert.php' );
-		
+
 		/**
 		 * Misc Functions
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/misc-functions.php' );
-		
+
 		/**
 		 * Enqueue Scripts
 		 */
 		require( MP_EVENTS_PLUGIN_DIR . 'includes/misc-functions/enqueue-scripts.php' );
-		
-					
+
+
 	}
 }
 add_action('plugins_loaded', 'mp_events_include_files', 9);
