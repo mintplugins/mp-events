@@ -119,7 +119,7 @@ function mp_events_format_mp_event_date( $start_or_end_date_string ){
  * @param    $new_title
  * @param    $new_slug
  * @param    $post
- * @return   The date string formatted.
+ * @return   $permalink_html
  */
 function mp_events_remove_sample_permalink_html( $permalink_html, $post_id, $new_title, $new_slug, $post ){
 
@@ -134,18 +134,14 @@ function mp_events_remove_sample_permalink_html( $permalink_html, $post_id, $new
 add_filter( 'get_sample_permalink_html', 'mp_events_remove_sample_permalink_html', 10, 5 );
 
 /**
- * Typically MP Events are viewed using something like EventGrid my Mint Plugins. The permalink, while useful for some, is not relevant for most.
- * Since the basic permalink is not typically correct for event dates, we hide the permalink sample from the user here.
+ * Typically MP Events are viewed using something like EventGrid my Mint Plugins. The admin bar "view" button, while useful for some, is not relevant for most.
+ * Since the basic permalink is not typically correct for event dates, we hide the "view event" admin bar button from the user here.
  *
  * @since    1.0.0
  * @link     http://mintplugins.com/doc/
  * @see      function_name()
  * @param    $permalink_html
- * @param    $post_id
- * @param    $new_title
- * @param    $new_slug
- * @param    $post
- * @return   The date string formatted.
+ * @return   void
  */
 function mp_events_remove_view_event( $wp_admin_bar ) {
 	global $post;
