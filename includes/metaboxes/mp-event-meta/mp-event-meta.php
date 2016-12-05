@@ -81,6 +81,13 @@ function mp_events_create_meta_box(){
 			'field_type' 	=> 'url',
 			'field_value' => ''
 		),
+		'event_video' => array(
+			'field_id'			=> 'event_video',
+			'field_title' 	=> __( 'Event Video?', 'mp_events'),
+			'field_description' 	=> 'Do you have a video for this event that you\'d like to use instead of the Event Featured Image? Enter embed code or a link to YouTube/Vimeo.',
+			'field_type' 	=> 'textarea',
+			'field_value' => ''
+		),
 		
 	);
 	
