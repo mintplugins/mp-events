@@ -146,7 +146,7 @@ add_filter( 'get_sample_permalink_html', 'mp_events_remove_sample_permalink_html
 function mp_events_remove_view_event( $wp_admin_bar ) {
 	global $post;
 
-	if ( $post->post_type == 'mp_event' ){
+	if ( isset( $post->post_type ) && $post->post_type == 'mp_event' ){
 		$wp_admin_bar->remove_node( 'view' );
 	}
 }
