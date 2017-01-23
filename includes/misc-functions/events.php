@@ -287,9 +287,6 @@ function mp_events_post( $mp_events ){
 				//get start date of this post
 				$start_date = strtotime( get_post_meta( $mp_event->ID, 'event_start_date', true ) );
 
-				//get end date of this post
-				$end_date = strtotime( mp_core_get_post_meta( $mp_event->ID, 'event_end_date', $start_date ) );
-
 				//If this event is in the future according to "yesterday" and this is a posts per page
 				if ( $start_date > strtotime( 'yesterday' ) ){
 
@@ -596,8 +593,18 @@ class mp_events_set_permalink_filter{
  */
 function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 
-	//Get this post
-	$this_event = get_post( $post_id );
+	if ( $post_id instanceof WP_Post ){
+		$this_event = get_post( $post_id->ID );
+		$post_id = $post_id->ID;
+	}else{
+		//Get this post
+		$this_event = get_post( $post_id );
+	}
+
+	// If we did not get a valid post object, something went wrong. 
+	if ( $this_event !instanceof WP_Post ){
+		return NULL;
+	}
 
 	//get start date of this post
 	$start_date = strtotime( get_post_meta( $post_id, 'event_start_date', true ) );
