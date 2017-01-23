@@ -4,7 +4,7 @@ Donate link: http://mintplugins.com/
 Tags: message bar, header
 Requires at least: 3.5
 Tested up to: 4.7
-Stable tag: 1.0.0.4
+Stable tag: 1.0.0.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,8 @@ Create Events
 == Screenshots ==
 
 == Changelog ==
+= 1.0.0.5 = January 23, 2017
+* Fix: Single events end dates were not getting set properly. Make sure mp_events_modify_event uses correct post id and object.
 
 = 1.0.0.4 = December 6, 2016
 * Fix: Double check that post exists has a post type. Removes error on dashboard caused in yesterday's 1.0.0.3 release.
