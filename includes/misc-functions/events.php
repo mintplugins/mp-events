@@ -165,7 +165,7 @@ function mp_events_post( $mp_events ){
 			if ( $event_repeat == 'daily' ){
 
 				if ( !isset( $daily_posts ) ){  $daily_posts = array(); }
-				array_push( $daily_posts, $post_id );
+				$daily_posts[$post_date][$post_id] = $post_id;
 
 			}
 
@@ -179,7 +179,7 @@ function mp_events_post( $mp_events ){
 				if ( !isset($weekly_posts[$post_date] ) ){ $weekly_posts[$post_date] = array(); }
 
 				//Push this post id into the array for this weedday
-				array_push( $weekly_posts[$post_date], $post_id );
+				$weekly_posts[$post_date][$post_id] = $post_id;
 			}
 
 
@@ -193,7 +193,7 @@ function mp_events_post( $mp_events ){
 				if ( !isset($fortnightly_posts[$post_date] ) ){ $fortnightly_posts[$post_date] = array(); }
 
 				//Push this post id into the array for this weedday
-				array_push( $fortnightly_posts[$post_date], $post_id );
+				$fortnightly_posts[$post_date][$post_id] = $post_id;
 
 			}
 
@@ -207,7 +207,7 @@ function mp_events_post( $mp_events ){
 				if ( !isset($monthly_posts[$post_date] ) ){ $monthly_posts[$post_date] = array(); }
 
 				//Push this post id into the array for this month day
-				array_push( $monthly_posts[$post_date], $post_id );
+				$monthly_posts[$post_date][$post_id] = $post_id;
 			}
 
 			//Set yearly repeat array
@@ -220,12 +220,13 @@ function mp_events_post( $mp_events ){
 				if ( !isset($yearly_posts[$post_date] ) ){ $yearly_posts[$post_date] = array(); }
 
 				//Push this post id into the array for this month day
-				array_push( $yearly_posts[$post_date], $post_id );
+				$yearly_posts[$post_date][$post_id] = $post_id;
 			}
 
 
 		//End Loop through mp_events
 		}
+
 
 		/**
 		* Rebuild the posts array
@@ -293,13 +294,13 @@ function mp_events_post( $mp_events ){
 					$this_event = mp_events_modify_event( $mp_event, date( 'Y-m-d', $start_date ), $loop_cutoff_type );
 
 					//Add this post into the return array of posts to show
-					array_push( $rebuilt_posts_array, $this_event );
+						array_push( $rebuilt_posts_array, $this_event['event'] );
 
 				}
 			}
 
 			//Set number of pages
-			//$mp_events_custom_query->max_num_pages = ceil( count( $rebuilt_posts_array ) / $posts_per_page );
+			$mp_events_custom_query->max_num_pages = ceil( count( $rebuilt_posts_array ) / $posts_per_page );
 
 			//Offset posts based on page number and amount of posts per page
 			$rebuilt_posts_array = array_slice( $rebuilt_posts_array, $offset, $posts_per_page );
@@ -335,6 +336,11 @@ function mp_events_post( $mp_events ){
 
 		$total_loops_needed = $offset + $posts_per_page;
 
+		// Prevent infinite loops
+		if ( empty( $total_loops_needed ) || $total_loops_needed > 9999 ){
+			$total_loops_needed = 0;
+		}
+
 		/**
 		* If there ARE repeating posts in this query
 		* Loop through dates starting at current_day (set above)
@@ -353,7 +359,8 @@ function mp_events_post( $mp_events ){
 
 			//Add all no repeat posts
 			//If there are any one-off posts
-			if (!empty( $single_events ) ) {
+			if ( !empty( $single_events ) ) {
+
 				//Loop through each single event
 				foreach ($single_events as $fulldate_num => $single_events_array){
 					//If this fulldate_num is the same as the current day we are looping through
@@ -366,20 +373,25 @@ function mp_events_post( $mp_events ){
 							$this_event = mp_events_modify_event( $single_event, $current_day, $loop_cutoff_type );
 
 							//Add this event to the array if it isn't returned as NULL
-							if ( !empty ($this_event) ) {
-								array_push( $rebuilt_posts_array, $this_event );
-							}
-							else{
+							if ( isset( $this_event['failure'] ) ) {
+
+								if ( 'single_event_has_ended' == $this_event['failure_id'] ){
+									//Remove this event from the list of single events since it is in the past
+									unset( $single_events_array[$single_event] );
+								}
+
 								if ( $loop_cutoff_type == 'days_per_page' ){
 									$total_loops_needed = $total_loops_needed -1;
 								}
+							}
+							else{
+									array_push( $rebuilt_posts_array, $this_event['event'] );
 							}
 
 						}
 					}
 				}
 			}
-
 
 			//Add all daily posts
 			if (!empty( $daily_posts ) ) {
@@ -388,14 +400,28 @@ function mp_events_post( $mp_events ){
 					//Change date to correct date and make other modifications
 					$this_event = mp_events_modify_event( $daily_post, $current_day, $loop_cutoff_type );
 
-					//Add this event to the array if it isn't returned as NULL
-					if ( !empty ($this_event) ) {
-						array_push( $rebuilt_posts_array, $this_event );
+					//Add this event to the array if it qualifies
+					if ( isset( $this_event['failure'] ) ) {
+
+						if ( 'recurring_event_has_ended' == $this_event['failure_id'] ){
+
+							// Remove this event from the list of yearly events as it is not valid (recurring end date is in the past.)
+							unset( $daily_posts[$daily_post] );
+
+							if ( $loop_cutoff_type == 'days_per_page' ){
+								$total_loops_needed = $total_loops_needed -1;
+							}
+
+							if ( $loop_cutoff_type == 'days_per_page' ){
+								$total_loops_needed = $total_loops_needed -1;
+							}
+						}
+
 					}
 					else{
-						if ( $loop_cutoff_type == 'days_per_page' ){
-							$total_loops_needed = $total_loops_needed -1;
-						}
+
+							array_push( $rebuilt_posts_array, $this_event['event'] );
+
 					}
 
 				}
@@ -413,14 +439,30 @@ function mp_events_post( $mp_events ){
 							//Change date to correct date and make other modifications
 							$this_event = mp_events_modify_event( $weekday_post, $current_day, $loop_cutoff_type );
 
-							//Add this event to the array if it isn't returned as NULL
-							if ( !empty ($this_event) ) {
-								array_push( $rebuilt_posts_array, $this_event );
+							//Add this event to the array if it qualifies
+							if ( isset( $this_event['failure'] ) ) {
+
+								if ( 'recurring_event_has_ended' == $this_event['failure_id'] ){
+
+									// Remove this event from the list of yearly events as it is not valid (recurring end date is likely in the past.)
+									unset( $weekly_posts[$weekday_name][$weekday_post] );
+
+									// If this is also the very last item scheduled for this day in yearly recurring posts, remove that day array as well
+									if (empty( $weekly_posts[$weekday_name] ) ){
+										unset( $weekly_posts[$weekday_name] );
+									}
+
+									if ( $loop_cutoff_type == 'days_per_page' ){
+										$total_loops_needed = $total_loops_needed -1;
+									}
+
+								}
+
 							}
 							else{
-								if ( $loop_cutoff_type == 'days_per_page' ){
-									$total_loops_needed = $total_loops_needed -1;
-								}
+
+									array_push( $rebuilt_posts_array, $this_event['event'] );
+
 							}
 
 						}
@@ -440,14 +482,30 @@ function mp_events_post( $mp_events ){
 							//Change date to correct date and make other modifications
 							$this_event = mp_events_modify_event( $monthday_post, $current_day, $loop_cutoff_type );
 
-							//Add this event to the array if it isn't returned as NULL
-							if ( !empty ($this_event) ) {
-								array_push( $rebuilt_posts_array, $this_event );
+							//Add this event to the array if it qualifies
+							if ( isset( $this_event['failure'] ) ) {
+
+								if ( 'recurring_event_has_ended' == $this_event['failure_id'] ){
+
+									// Remove this event from the list of yearly events as it is not valid (recurring end date is likely in the past.)
+									unset( $monthly_posts[$monthday_num][$monthday_post] );
+
+									// If this is also the very last item scheduled for this day in yearly recurring posts, remove that day array as well
+									if (empty( $monthly_posts[$monthday_num] ) ){
+										unset( $monthly_posts[$monthday_num] );
+									}
+
+									if ( $loop_cutoff_type == 'days_per_page' ){
+										$total_loops_needed = $total_loops_needed -1;
+									}
+
+								}
+
 							}
 							else{
-								if ( $loop_cutoff_type == 'days_per_page' ){
-									$total_loops_needed = $total_loops_needed -1;
-								}
+
+									array_push( $rebuilt_posts_array, $this_event['event'] );
+
 							}
 
 						}
@@ -456,7 +514,7 @@ function mp_events_post( $mp_events ){
 			}
 
 			//If there are any yearly posts
-			if (!empty( $yearly_posts ) ) {
+			if ( !empty( $yearly_posts ) ) {
 
 				//Loop through each set of weekdays
 				foreach ($yearly_posts as $monthday_date => $monthday_array){
@@ -468,14 +526,30 @@ function mp_events_post( $mp_events ){
 							//Change date to correct date and make other modifications
 							$this_event = mp_events_modify_event( $monthday_post, $current_day, $loop_cutoff_type );
 
-							//Add this event to the array if it isn't returned as NULL
-							if ( ! empty ($this_event) ) {
-								array_push( $rebuilt_posts_array, $this_event );
+							//Add this event to the array if it qualifies
+							if ( isset( $this_event['failure'] ) ) {
+
+								if ( 'recurring_event_has_ended' == $this_event['failure_id'] ){
+
+									// Remove this event from the list of yearly events as it is not valid (recurring end date is likely in the past.)
+									unset( $yearly_posts[$monthday_date][$monthday_post] );
+
+									// If this is also the very last item scheduled for this day in yearly recurring posts, remove that day array as well
+									if (empty( $yearly_posts[$monthday_date] ) ){
+										unset( $yearly_posts[$monthday_date] );
+									}
+
+									if ( $loop_cutoff_type == 'days_per_page' ){
+										$total_loops_needed = $total_loops_needed -1;
+									}
+
+								}
+
 							}
 							else{
-								if ( $loop_cutoff_type == 'days_per_page' ){
-									$total_loops_needed = $total_loops_needed -1;
-								}
+
+									array_push( $rebuilt_posts_array, $this_event['event'] );
+
 							}
 
 						}
@@ -483,13 +557,16 @@ function mp_events_post( $mp_events ){
 				}
 			}
 
+			// If, at this point, there are no more events to loop through (perhaps they've all been recurring events in the past
+			if ( empty( $yearly_posts ) && empty( $monthly_posts ) && empty( $weekly_posts ) && empty( $daily_posts ) ){
+				break;
+			}
+
 			//Add one day to the current day to prepare for the next iteration
 			$current_day = mp_events_add_date( $current_day, $day=1, $mth=0, $yr=0 );
 
 		//End loop through date range
 		}
-
-
 
 		//If this is not a days per page query - meaning it is a posts per page query
 		if ( $loop_cutoff_type != 'days_per_page' ){
@@ -504,8 +581,15 @@ function mp_events_post( $mp_events ){
 		//Offset posts based on previous offset number
 		$rebuilt_posts_array = array_slice( $rebuilt_posts_array, $day_offset );
 
-		//Set the max number of pages in the Wp_query variable to 5 pages - if we are not showing a full month
-		$mp_events_custom_query->max_num_pages = !isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 5 : 0;
+		//Set number of pages
+		$mp_events_custom_query->max_num_pages = ceil( count( $rebuilt_posts_array ) / $posts_per_page );
+
+		if ( count( $rebuilt_posts_array ) > $posts_per_page ){
+			//Set the max number of pages in the Wp_query variable to 5 pages - if we are not showing a full month
+			$mp_events_custom_query->max_num_pages = !isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 5 : 0;
+		}else{
+			$mp_events_custom_query->max_num_pages = 1;
+		}
 
 		//If there is nothing in the $rebuilt_posts_array
 		if ( empty( $rebuilt_posts_array ) ){
@@ -607,6 +691,9 @@ function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 	//get end date of this post
 	$end_date = get_post_meta( $post_id, 'event_end_date', true );
 
+	// Does this event repeat?
+	$event_repeat = mp_core_get_post_meta( $post_id, 'event_repeat', 'none' );
+
 	//Check if there is an end date for repeating (if this event repeats)
 	$end_repeat_date = mp_core_get_post_meta( $post_id, 'event_repeat_end_date', 'infinite' );
 
@@ -623,23 +710,42 @@ function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 
 		$current_time = strtotime( $current_day );
 
-		//If this event is in the future according to "yesterday" and this is a posts per page - and the end date hasn't "passed" (in the current loop) for this repeating event.
-		if ( $current_time > strtotime( 'yesterday' ) && ( $current_time < strtotime( $end_repeat_date ) || $end_repeat_date == 'infinite' ) ){
-
-			//Reset the date of this phantom event "post" in the query
-			$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day );
-			$this_event->mp_events_end_date = date( 'Y-m-d', strtotime( $this_event->post_date ) + $seconds_between_start_and_end );
-
-			//Add the date to the permalink
-			new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
-
-			return $this_event;
-
+		//If this event is in the past according to "yesterday", don't add it to the list of upcoming events.
+		if ( $current_time < strtotime( 'yesterday' ) ){
+			return array(
+				'failure' => true,
+				'failure_id' => 'single_event_has_ended'
+			);
 		}
-		//If this event is not in the future, return NULL
-		else{
-			return false;
+
+		// If the recurring end date has "passed" (in the current loop) for this repeating event, don't add it to the list of upcoming events.
+		if ( $end_repeat_date != 'infinite' && $current_time > strtotime( $end_repeat_date ) ){
+			return array(
+				'failure' => true,
+				'failure_id' => 'recurring_event_has_ended'
+			);
 		}
+
+		// If the recurring start date has not yet "passed" (in the current loop) for this repeating event, don't add it to the list of upcoming events yet.
+		if ( $event_repeat != 'none' && $current_time < $start_date ){
+			return array(
+				'failure' => true,
+				'failure_id' => 'recurring_event_has_not_started'
+			);
+		}
+
+		//Reset the date of this phantom event "post" in the query
+		$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day );
+		$this_event->mp_events_end_date = date( 'Y-m-d', strtotime( $this_event->post_date ) + $seconds_between_start_and_end );
+
+		//Add the date to the permalink
+		new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
+
+		return array(
+				'event' => $this_event
+		);
+
+
 	}
 	//If this is a days per page query
 	else{
