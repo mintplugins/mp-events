@@ -4,7 +4,7 @@ Donate link: http://mintplugins.com/
 Tags: message bar, header
 Requires at least: 3.5
 Tested up to: 4.8
-Stable tag: 1.0.0.8
+Stable tag: 1.0.0.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,9 @@ Create Events
 == Screenshots ==
 
 == Changelog ==
+
+= 1.0.0.9 = June 21, 2017
+* Add checks for single events being empty
 
 = 1.0.0.8 = June 21, 2017
 * Fix: Daily recurring events were not working because of an array formatting issue.
