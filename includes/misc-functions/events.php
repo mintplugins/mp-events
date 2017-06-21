@@ -396,34 +396,35 @@ function mp_events_post( $mp_events ){
 			//Add all daily posts
 			if (!empty( $daily_posts ) ) {
 				foreach ($daily_posts as $daily_post){
+					foreach( $daily_post as $daily_post_id ){
 
-					//Change date to correct date and make other modifications
-					$this_event = mp_events_modify_event( $daily_post, $current_day, $loop_cutoff_type );
+						//Change date to correct date and make other modifications
+						$this_event = mp_events_modify_event( $daily_post_id, $current_day, $loop_cutoff_type );
 
-					//Add this event to the array if it qualifies
-					if ( isset( $this_event['failure'] ) ) {
+						//Add this event to the array if it qualifies
+						if ( isset( $this_event['failure'] ) ) {
 
-						if ( 'recurring_event_has_ended' == $this_event['failure_id'] ){
+							if ( 'recurring_event_has_ended' == $this_event['failure_id'] ){
 
-							// Remove this event from the list of yearly events as it is not valid (recurring end date is in the past.)
-							unset( $daily_posts[$daily_post] );
+								// Remove this event from the list of yearly events as it is not valid (recurring end date is in the past.)
+								unset( $daily_posts[$daily_post_id] );
 
-							if ( $loop_cutoff_type == 'days_per_page' ){
-								$total_loops_needed = $total_loops_needed -1;
+								if ( $loop_cutoff_type == 'days_per_page' ){
+									$total_loops_needed = $total_loops_needed -1;
+								}
+
+								if ( $loop_cutoff_type == 'days_per_page' ){
+									$total_loops_needed = $total_loops_needed -1;
+								}
 							}
 
-							if ( $loop_cutoff_type == 'days_per_page' ){
-								$total_loops_needed = $total_loops_needed -1;
-							}
 						}
+						else{
 
+								array_push( $rebuilt_posts_array, $this_event['event'] );
+
+						}
 					}
-					else{
-
-							array_push( $rebuilt_posts_array, $this_event['event'] );
-
-					}
-
 				}
 			}
 
