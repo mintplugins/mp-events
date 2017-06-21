@@ -3,8 +3,8 @@ Contributors: johnstonphilip
 Donate link: http://mintplugins.com/
 Tags: message bar, header
 Requires at least: 3.5
-Tested up to: 4.7
-Stable tag: 1.0.0.7
+Tested up to: 4.8
+Stable tag: 1.0.0.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,9 +31,13 @@ Create Events
 == Screenshots ==
 
 == Changelog ==
+
+= 1.0.0.8 = June 21, 2017
+* Fix: Daily recurring events were not working because of an array formatting issue.
+
 = 1.0.0.7 = April 19, 2017
 * Fix: Recurring events were recurring into the past and future. Now they begin at the right time.
-* Fix: Recurring events with an end time were causing never-ending looping issues in some cases. Those are now fixed. 
+* Fix: Recurring events with an end time were causing never-ending looping issues in some cases. Those are now fixed.
 
 = 1.0.0.6 = January 23, 2017
 * Fix: Single events end dates were not getting set properly. Make sure mp_events_modify_event uses correct post id and object.
