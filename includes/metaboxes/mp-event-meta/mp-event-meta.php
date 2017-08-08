@@ -3,19 +3,19 @@
  * Function which creates new Meta Box
  *
  */
-function mp_events_create_meta_box(){	
+function mp_events_create_meta_box(){
 	/**
 	 * Array which stores all info about the new metabox
 	 *
 	 */
 	$mp_events_add_meta_box = array(
-		'metabox_id' => 'mp_events_metabox', 
-		'metabox_title' => __( 'Event Data', 'mp_events'), 
-		'metabox_posttype' => 'mp_event', 
-		'metabox_context' => 'advanced', 
-		'metabox_priority' => 'low' 
+		'metabox_id' => 'mp_events_metabox',
+		'metabox_title' => __( 'Event Data', 'mp_events'),
+		'metabox_posttype' => 'mp_event',
+		'metabox_context' => 'advanced',
+		'metabox_priority' => 'low'
 	);
-			
+
 	/**
 	 * Array which stores all info about the options within the metabox
 	 *
@@ -26,7 +26,7 @@ function mp_events_create_meta_box(){
 			'field_title' 	=> __( 'Event Start Date  (Required)', 'mp_events'),
 			'field_description' 	=> 'The date of this event. Format: yyyy-mm-dd',
 			'field_type' 	=> 'date',
-			'field_value' => '',
+			'field_value' => date( 'Y-m-d', time() ),
 			'field_required' => true
 		),
 		'event_start_time' => array(
@@ -41,7 +41,7 @@ function mp_events_create_meta_box(){
 			'field_title' 	=> __( 'Event End Date', 'mp_events'),
 			'field_description' 	=> 'The date when this event ends. Format: yyyy-mm-dd',
 			'field_type' 	=> 'date',
-			'field_value' => '',
+			'field_value' => date( 'Y-m-d', time() ),
 		),
 		'event_end_time' => array(
 			'field_id'			=> 'event_end_time',
@@ -63,7 +63,7 @@ function mp_events_create_meta_box(){
 			'field_title' 	=> __( 'Event Repeat End Date', 'mp_events'),
 			'field_description' 	=> 'When does this event stop repeating? Leave blank for infinite repeating.',
 			'field_type' 	=> 'date',
-			'field_value' => '',
+			'field_value' => date( 'Y-m-d', time() ),
 			'field_conditional_id' => 'event_repeat',
 			'field_conditional_values' => array( 'daily', 'weekly', 'monthly', 'yearly' ),
 		),
@@ -88,21 +88,21 @@ function mp_events_create_meta_box(){
 			'field_type' 	=> 'textarea',
 			'field_value' => ''
 		),
-		
+
 	);
-	
-	
+
+
 	/**
 	 * Custom filter to allow for add-on plugins to hook in their own data for add_meta_box array
 	 */
 	$mp_events_add_meta_box = has_filter('mp_events_meta_box_array') ? apply_filters( 'mp_events_meta_box_array', $mp_events_add_meta_box) : $mp_events_add_meta_box;
-	
+
 	/**
-	 * Custom filter to allow for add on plugins to hook in their own extra fields 
+	 * Custom filter to allow for add on plugins to hook in their own extra fields
 	 */
 	$mp_events_items_array = has_filter('mp_events_items_array') ? apply_filters( 'mp_events_items_array', $mp_events_items_array) : $mp_events_items_array;
-	
-	
+
+
 	/**
 	 * Create Metabox class
 	 */
