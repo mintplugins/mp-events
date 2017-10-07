@@ -25,8 +25,9 @@ function mp_events_create_meta_box(){
 			'field_id'			=> 'event_start_date',
 			'field_title' 	=> __( 'Event Start Date  (Required)', 'mp_events'),
 			'field_description' 	=> 'The date of this event. Format: yyyy-mm-dd',
-			'field_type' 	=> 'date',
-			'field_value' => date( 'Y-m-d', time() ),
+			'field_type' 	=> 'textbox',
+			'field_placeholder' => 'yyyy-mm-dd',
+			'field_value' => '',
 			'field_required' => true
 		),
 		'event_start_time' => array(
@@ -40,8 +41,9 @@ function mp_events_create_meta_box(){
 			'field_id'			=> 'event_end_date',
 			'field_title' 	=> __( 'Event End Date', 'mp_events'),
 			'field_description' 	=> 'The date when this event ends. Format: yyyy-mm-dd',
-			'field_type' 	=> 'date',
-			'field_value' => date( 'Y-m-d', time() ),
+			'field_type' 	=> 'textbox',
+			'field_placeholder' => 'yyyy-mm-dd',
+			'field_value' => '',
 		),
 		'event_end_time' => array(
 			'field_id'			=> 'event_end_time',
@@ -61,9 +63,10 @@ function mp_events_create_meta_box(){
 		'event_repeat_end_date' => array(
 			'field_id'			=> 'event_repeat_end_date',
 			'field_title' 	=> __( 'Event Repeat End Date', 'mp_events'),
-			'field_description' 	=> 'When does this event stop repeating? Leave blank for infinite repeating.',
-			'field_type' 	=> 'date',
-			'field_value' => date( 'Y-m-d', time() ),
+			'field_description' 	=> 'When does this event stop repeating? Leave blank for infinite repeating. Format: yyyy-mm-dd',
+			'field_type' 	=> 'textbox',
+			'field_value' => '',
+			'field_placeholder' => 'yyyy-mm-dd',
 			'field_conditional_id' => 'event_repeat',
 			'field_conditional_values' => array( 'daily', 'weekly', 'monthly', 'yearly' ),
 		),

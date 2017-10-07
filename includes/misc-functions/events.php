@@ -147,7 +147,7 @@ function mp_events_post( $mp_events ){
 			$post_date = strtotime( $post_date );
 
 			//Get Repeat Setting
-			$event_repeat = get_post_meta( $post_id, 'event_repeat', true );
+			$event_repeat = mp_core_get_post_meta( $post_id, 'event_repeat', 'none' );
 
 			//Set no repeat array
 			if ( $event_repeat == 'none' ){
