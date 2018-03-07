@@ -342,6 +342,35 @@ function mp_events_post( $mp_events ){
 			$total_loops_needed = 0;
 		}
 
+		$first_date_in_loop = strtotime($current_day);
+
+		if ( !empty( $single_events ) ) {
+
+			//Loop through each single event, and eliminate any that are older than this loop's beginning date
+			foreach ($single_events as $fulldate_num => $single_events_array){
+
+				//Loop through each post set for this full_date
+				foreach( $single_events_array as $single_event_id ){
+
+					//get start date of this post
+					$single_event_start_date = strtotime( get_post_meta( $single_event_id, 'event_start_date', true ) );
+
+					//If this event is older than this loop's beginning date
+					if ( $first_date_in_loop > $single_event_start_date ){
+
+						//Remove this event from the list of single events since it is in the past
+						unset( $single_events[$fulldate_num][$single_event_id] );
+
+						if ( empty( $single_events[$fulldate_num] ) ) {
+							unset( $single_events[$fulldate_num] );
+						}
+
+					}
+
+				}
+			}
+		}
+
 		/**
 		* If there ARE repeating posts in this query
 		* Loop through dates starting at current_day (set above)
@@ -379,12 +408,11 @@ function mp_events_post( $mp_events ){
 
 								if ( 'single_event_has_ended' == $this_event['failure_id'] ){
 									//Remove this event from the list of single events since it is in the past
-									unset( $single_events_array[$single_event_id] );
-								}
+									unset( $single_events[$fulldate_num][$single_event_id] );
 
-								// If this is also the very last item scheduled for this day in single events, remove that day array as well
-								if ( empty( $single_events_array[$fulldate_num] ) ){
-									unset( $single_events_array[$fulldate_num] );
+									if ( empty( $single_events[$fulldate_num] ) ) {
+										unset( $single_events[$fulldate_num] );
+									}
 								}
 
 								if ( $loop_cutoff_type == 'days_per_page' ){
@@ -394,12 +422,11 @@ function mp_events_post( $mp_events ){
 							else{
 									array_push( $rebuilt_posts_array, $this_event['event'] );
 
-									//Remove this event from the list of single events since it has been set up
-									unset( $single_events_array[$single_event_id] );
+									//Remove this event from the list of single events since it is in the past
+									unset( $single_events[$fulldate_num][$single_event_id] );
 
-									// If this is also the very last item scheduled for this day in single events, remove that day array as well
-									if ( empty( $single_events_array[$fulldate_num] ) ){
-										unset( $single_events_array[$fulldate_num] );
+									if ( empty( $single_events[$fulldate_num] ) ) {
+										unset( $single_events[$fulldate_num] );
 									}
 							}
 
@@ -450,6 +477,7 @@ function mp_events_post( $mp_events ){
 
 			//If there are any weekly posts
 			if (!empty( $weekly_posts ) ) {
+
 				//Loop through each set of weekdays
 				foreach ($weekly_posts as $weekday_name => $weekday_array){
 					//If this weekday is the same as the current day we are looping through
@@ -579,7 +607,7 @@ function mp_events_post( $mp_events ){
 			}
 
 			// If, at this point, there are no more events to loop through (perhaps they've all been recurring events in the past
-			if ( empty( $yearly_posts ) && empty( $monthly_posts ) && empty( $weekly_posts ) && empty( $daily_posts ) && empty( $single_events_array ) ){
+			if ( empty( $yearly_posts ) && empty( $monthly_posts ) && empty( $weekly_posts ) && empty( $daily_posts ) && empty( $single_events ) ){
 				break;
 			}
 
