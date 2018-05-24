@@ -4,7 +4,7 @@ Donate link: http://mintplugins.com/
 Tags: message bar, header
 Requires at least: 3.5
 Tested up to: 4.9.4
-Stable tag: 1.0.1.2
+Stable tag: 1.0.1.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,9 @@ Create Events
 == Screenshots ==
 
 == Changelog ==
+
+= 1.0.1.3 = May 24, 2018
+* Make sure recurring checks aren’t single events
 
 = 1.0.1.2 = March 7, 2018
 * Remove any single events that are older than the loop’s beginning date before creating the event array
