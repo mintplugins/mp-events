@@ -294,8 +294,10 @@ function mp_events_post( $mp_events ){
 
 					$this_event = mp_events_modify_event( $mp_event, date( 'Y-m-d', $start_date ), $loop_cutoff_type );
 
-					//Add this post into the return array of posts to show
+					if ( isset( $this_event['event'] ) ) {
+						//Add this post into the return array of posts to show
 						array_push( $rebuilt_posts_array, $this_event['event'] );
+					}
 
 				}
 			}
@@ -768,7 +770,7 @@ function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 		}
 
 		// If the recurring end date has "passed" (in the current loop) for this repeating event, don't add it to the list of upcoming events.
-		if ( $end_repeat_date != 'infinite' && $current_time > strtotime( $end_repeat_date ) ){
+		if ( $event_repeat != 'none' && $end_repeat_date != 'infinite' && $current_time > strtotime( $end_repeat_date ) ){
 			return array(
 				'failure' => true,
 				'failure_id' => 'recurring_event_has_ended'
