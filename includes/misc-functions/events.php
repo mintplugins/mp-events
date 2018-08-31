@@ -3,7 +3,6 @@
 * Order events baed on their set date in the event_start_date meta field
 */
 function mp_events( $query ) {
-
 	//If this is a post_type
 	if ( isset( $query->query['post_type'] ) ) {
 
@@ -98,6 +97,11 @@ add_action ( 'pre_get_posts', 'mp_events', 1 );
 */
 function mp_events_post( $mp_events ){
 
+	// Get the timezone set for the WordPress
+	$wp_timezone = new DateTimeZone( mp_events_get_timezone_id() );
+	$utc_timezone = new DateTimeZone( 'UTC' );
+	$yesterday = new DateTime( 'yesterday', $wp_timezone );
+
 	//Make sure this doesn't affect other loops on this page
 	remove_filter ( 'the_posts', 'mp_events_post' );
 
@@ -140,11 +144,25 @@ function mp_events_post( $mp_events ){
 			//Set Post ID
 			$post_id = $mp_event->ID;
 
-			//Set Post Date
-			$post_date = get_post_meta( $post_id, 'event_start_date', true );
+			//Set Post Date to the date of the event
+			$date_object = new DateTime();
+			$date_object = $date_object->createFromFormat( 'Y-m-d', get_post_meta( $post_id, 'event_start_date', true ), $wp_timezone );
 
-			//Get date of event
-			$post_date = strtotime( $post_date );
+			// If we were not able to create a datetime object (probably the wrong format), skip this event
+			if ( ! ( $date_object instanceof DateTime ) ) {
+
+				// Check to see if they entered the time of the event in the date field
+				$date_object = new DateTime();
+				$date_object = $date_object->createFromFormat( 'Y-m-d H:i:s', get_post_meta( $post_id, 'event_start_date', true ), $wp_timezone );
+
+				// If the format of the date is still no good, skip this event
+				if ( ! ( $date_object instanceof DateTime ) ) {
+					continue;
+				}
+			}
+
+			//$date_object = new DateTime( get_post_meta( $post_id, 'event_start_date', true ), $wp_timezone );
+			$post_date = $date_object->getTimestamp();
 
 			//Get Repeat Setting
 			$event_repeat = mp_core_get_post_meta( $post_id, 'event_repeat', 'none' );
@@ -241,13 +259,22 @@ function mp_events_post( $mp_events ){
 		$month = isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? $mp_events_custom_query->query_vars['mp_events_month'] : date('m');
 
 		//Set day from the URL using the mp_events_custom_query. If the month is set, set it to 1, if not, set it to yesterday
-		$day = !isset( $mp_events_custom_query->query_vars['mp_events_day'] ) ? isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ? 1 : date('d', strtotime('yesterday' ) ) : $mp_events_custom_query->query_vars['mp_events_day'];
+		if ( !isset( $mp_events_custom_query->query_vars['mp_events_day'] ) ) {
+			if ( isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ) {
+				$day = 1;
+			} else {
+				$day = date('d', $yesterday->getTimestamp() );
+			}
+		} else {
+			$mp_events_custom_query->query_vars['mp_events_day'];
+		}
 
 		//Get page number - and make sure the page isn't anything higher than 500 - to keep servers from crashing
 		$paged = $mp_events_custom_query->query_vars['paged'] > 500 ? 500 : $mp_events_custom_query->query_vars['paged'];
 
 		//Set starting date
-		$current_day = $year .'-' . $month . '-' . $day;
+		$current_day = new DateTime();
+		$current_day = $current_day->createFromFormat( 'Y-m-d', $year .'-' . $month . '-' . $day, $wp_timezone );
 
 		//Set posts per page to number of days in current month, or to the number set in settings > reading
 		if ( isset( $mp_events_custom_query->query_vars['mp_events_days_per_page'] ) ){
@@ -256,7 +283,7 @@ function mp_events_post( $mp_events ){
 
 		}elseif ( isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ){
 
-			$posts_per_page = date('t', strtotime( $current_day ) );
+			$posts_per_page = date('t', $current_day->getTimestamp() );
 
 		}else{
 
@@ -286,13 +313,19 @@ function mp_events_post( $mp_events ){
 			//Loop through each post
 			foreach ( $mp_events as $mp_event ){
 
-				//get start date of this post
-				$start_date = strtotime( get_post_meta( $mp_event->ID, 'event_start_date', true ) );
+				$the_start_date = mp_core_get_post_meta( $mp_event->ID, 'event_start_date' );
+				$the_start_time = mp_core_get_post_meta( $mp_event->ID, 'event_start_time' );
+				$start_date = mp_events_get_event_datetime_object( $the_start_date, $the_start_time );
+
+				// If we were not able to create a datetime object (probably the wrong format), skip this event
+				if ( ! ( $start_date instanceof DateTime ) ) {
+					continue;
+				}
 
 				//If this event is in the future according to "yesterday" and this is a posts per page
-				if ( $start_date > strtotime( 'yesterday' ) ){
+				if ( $start_date->getTimestamp() > $yesterday ){
 
-					$this_event = mp_events_modify_event( $mp_event, date( 'Y-m-d', $start_date ), $loop_cutoff_type );
+					$this_event = mp_events_modify_event( $mp_event, $start_date, $loop_cutoff_type );
 
 					if ( isset( $this_event['event'] ) ) {
 						//Add this post into the return array of posts to show
@@ -334,9 +367,6 @@ function mp_events_post( $mp_events ){
 			$offset = 0;
 		}
 
-		//Get the time for "yesterday"
-		$utc_yesterday = strtotime("yesterday");
-
 		$total_loops_needed = $offset + $posts_per_page;
 
 		// Prevent infinite loops
@@ -344,7 +374,7 @@ function mp_events_post( $mp_events ){
 			$total_loops_needed = 0;
 		}
 
-		$first_date_in_loop = strtotime($current_day);
+		$first_date_in_loop = $current_day->getTimestamp();
 
 		if ( !empty( $single_events ) ) {
 
@@ -355,10 +385,17 @@ function mp_events_post( $mp_events ){
 				foreach( $single_events_array as $single_event_id ){
 
 					//get start date of this post
-					$single_event_start_date = strtotime( get_post_meta( $single_event_id, 'event_start_date', true ) );
+					$the_start_date = mp_core_get_post_meta( $single_event_id, 'event_start_date' );
+					$the_start_time = mp_core_get_post_meta( $single_event_id, 'event_start_time' );
+					$single_event_start_date = mp_events_get_event_datetime_object( $the_start_date, $the_start_time );
+
+					// If we were not able to create a datetime object (probably the wrong format), skip this event
+					if ( ! ( $single_event_start_date instanceof DateTime ) ) {
+						continue;
+					}
 
 					//If this event is older than this loop's beginning date
-					if ( $first_date_in_loop > $single_event_start_date ){
+					if ( $first_date_in_loop > $single_event_start_date->getTimestamp() ){
 
 						//Remove this event from the list of single events since it is in the past
 						unset( $single_events[$fulldate_num][$single_event_id] );
@@ -382,12 +419,10 @@ function mp_events_post( $mp_events ){
 			//Add correct amount to counter based on cutoff type
 			$counter = $loop_cutoff_type == 'days_per_page' ? $counter + 1 : ( count( $rebuilt_posts_array ) - $offset );
 
-			$current_time = strtotime($current_day);
-
-			$full_date = date("Y_m_d", $current_time);
-			$day_of_week = date("l", $current_time); //Monday
-			$day_of_month = date("d", $current_time); //01
-			$day_of_month_of_year = date("M j", $current_time); //01
+			$full_date = date( "Y_m_d", $current_day->getTimestamp() );
+			$day_of_week = date( "l", $current_day->getTimestamp() ); //Monday
+			$day_of_month = date( "d", $current_day->getTimestamp() ); //01
+			$day_of_month_of_year = date( "M j", $current_day->getTimestamp() ); //01
 
 			//Add all no repeat posts
 			//If there are any one-off posts
@@ -402,8 +437,10 @@ function mp_events_post( $mp_events ){
 						//Loop through each post set for this full_date
 						foreach( $single_events_array as $single_event_id ){
 
+							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') );
+
 							//Change date to correct date and make other modifications
-							$this_event = mp_events_modify_event( $single_event_id, $current_day, $loop_cutoff_type );
+							$this_event = mp_events_modify_event( $single_event_id, $date_event_should_be, $loop_cutoff_type );
 
 							//Add this event to the array if it isn't returned as NULL
 							if ( isset( $this_event['failure'] ) ) {
@@ -442,8 +479,10 @@ function mp_events_post( $mp_events ){
 				foreach ($daily_posts as $day_key => $daily_post){
 					foreach( $daily_post as $daily_post_id ){
 
+						$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') );
+
 						//Change date to correct date and make other modifications
-						$this_event = mp_events_modify_event( $daily_post_id, $current_day, $loop_cutoff_type );
+						$this_event = mp_events_modify_event( $daily_post_id, $date_event_should_be, $loop_cutoff_type );
 
 						//Add this event to the array if it qualifies
 						if ( isset( $this_event['failure'] ) ) {
@@ -487,8 +526,10 @@ function mp_events_post( $mp_events ){
 						//Loop through each post set for this weekday
 						foreach( $weekday_array as $weekday_post ){
 
+							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') );
+
 							//Change date to correct date and make other modifications
-							$this_event = mp_events_modify_event( $weekday_post, $current_day, $loop_cutoff_type );
+							$this_event = mp_events_modify_event( $weekday_post, $date_event_should_be, $loop_cutoff_type );
 
 							//Add this event to the array if it qualifies
 							if ( isset( $this_event['failure'] ) ) {
@@ -530,8 +571,10 @@ function mp_events_post( $mp_events ){
 						//Loop through each post set for this weekday
 						foreach( $monthday_array as $monthday_post ){
 
+							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') );
+
 							//Change date to correct date and make other modifications
-							$this_event = mp_events_modify_event( $monthday_post, $current_day, $loop_cutoff_type );
+							$this_event = mp_events_modify_event( $monthday_post, $date_event_should_be, $loop_cutoff_type );
 
 							//Add this event to the array if it qualifies
 							if ( isset( $this_event['failure'] ) ) {
@@ -574,8 +617,10 @@ function mp_events_post( $mp_events ){
 						//Loop through each post set for this year day
 						foreach( $monthday_array as $monthday_post ){
 
+							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') );
+
 							//Change date to correct date and make other modifications
-							$this_event = mp_events_modify_event( $monthday_post, $current_day, $loop_cutoff_type );
+							$this_event = mp_events_modify_event( $monthday_post, $date_event_should_be, $loop_cutoff_type );
 
 							//Add this event to the array if it qualifies
 							if ( isset( $this_event['failure'] ) ) {
@@ -614,7 +659,7 @@ function mp_events_post( $mp_events ){
 			}
 
 			//Add one day to the current day to prepare for the next iteration
-			$current_day = mp_events_add_date( $current_day, $day=1, $mth=0, $yr=0 );
+			$current_day->modify( '+1 day' );
 
 		//End loop through date range
 		}
@@ -666,18 +711,6 @@ function mp_events_post( $mp_events ){
 	}
 
 }
-
-/**
-* Increment the date by number of days passed into function
-*/
-function mp_events_add_date($givendate,$day=0,$mth=0,$yr=0) {
-	$cd = strtotime($givendate);
-	$newdate = date('Y-m-d', mktime(date('h',$cd),
-	date('i',$cd), date('s',$cd), date('m',$cd)+$mth,
-	date('d',$cd)+$day, date('Y',$cd)+$yr));
-	return $newdate;
-}
-
 
 /**
 * This class adds the date to the permalink of each fake event post we created
@@ -736,11 +769,44 @@ function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 		$this_event = get_post( $post_id );
 	}
 
+	// Create a UTC timezone version
+	$current_date_utc_timezone = new DateTime( '@' . $current_day->getTimestamp() );
+
+	$wp_timezone = new DateTimeZone( mp_events_get_timezone_id() );
+
+	$yesterday = new DateTime( 'yesterday', $wp_timezone );
+
 	//get start date of this post
-	$start_date = strtotime( get_post_meta( $post_id, 'event_start_date', true ) );
+	$start_date = new DateTime();
+
+	// Try to create the date object, checking if they entered the date and the time in the event start date field
+	$start_date = $start_date->createFromFormat( 'Y-m-d H:i:s', get_post_meta( $post_id, 'event_start_date', true ), $wp_timezone );
+
+	// If we got an invalid date time object, try without the time added
+	if ( ! ( $start_date instanceof DateTime ) ) {
+		$start_date = new DateTime();
+		$start_date = $start_date->createFromFormat( 'Y-m-d', get_post_meta( $post_id, 'event_start_date', true ), $wp_timezone );
+	}
+
+	// If we were not able to create a datetime object (probably the wrong format), skip this event
+	if ( ! ( $start_date instanceof DateTime ) ) {
+		return array(
+			'failure' => true,
+			'failure_id' => 'invalid_start_date'
+		);
+	}
 
 	//get end date of this post
-	$end_date = get_post_meta( $post_id, 'event_end_date', true );
+	$end_date = new DateTime();
+	$end_date = $end_date->createFromFormat( 'Y-m-d', get_post_meta( $post_id, 'event_end_date', true ), $wp_timezone );
+
+	// If we were not able to create a datetime object (probably the wrong format), skip this event
+	if ( ! ( $end_date instanceof DateTime ) ) {
+		$valid_end_date = false;
+	} else {
+		$valid_end_date = true;
+	}
+
 
 	// Does this event repeat?
 	$event_repeat = mp_core_get_post_meta( $post_id, 'event_repeat', 'none' );
@@ -748,67 +814,117 @@ function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 	//Check if there is an end date for repeating (if this event repeats)
 	$end_repeat_date = mp_core_get_post_meta( $post_id, 'event_repeat_end_date', 'infinite' );
 
+	if ( 'infinite' != $end_repeat_date ) {
+		$end_repeat_date = new DateTime();
+		$end_repeat_date = $end_repeat_date->createFromFormat( 'Y-m-d', get_post_meta( $post_id, 'event_repeat_end_date', true ), $wp_timezone );
+
+		// If we were not able to create a datetime object (probably the wrong format), skip this event
+		if ( ! ( $end_repeat_date instanceof DateTime ) ) {
+			$valid_end_repeat_date = false;
+		} else {
+			$valid_end_repeat_date = true;
+		}
+
+		$end_repeat_date_infinite = false;
+
+	} else {
+		$end_repeat_date_infinite = true;
+	}
+
 	//Get the number of seconds between the start date and the end date
-	if ( !empty( $end_date ) ){
-		$seconds_between_start_and_end = strtotime( $end_date ) - $start_date;
+	if ( $valid_end_date ){
+		$seconds_between_start_and_end = $end_date->getTimestamp() - $start_date->getTimestamp();
 	}
 	else{
 		$seconds_between_start_and_end = 0;
 	}
 
-	//If this query is a posts per page query
-	if ( $loop_cutoff_type == 'posts_per_page' ){
+	$end_date_time = new DateTime( '@' . ( $current_time + $seconds_between_start_and_end ) );
 
-		$current_time = strtotime( $current_day );
+	$current_time = $current_day->getTimestamp();
 
-		//If this event is in the past according to "yesterday", don't add it to the list of upcoming events.
-		if ( $current_time < strtotime( 'yesterday' ) ){
-			return array(
-				'failure' => true,
-				'failure_id' => 'single_event_has_ended'
-			);
-		}
+	//If this event is in the past according to "yesterday", don't add it to the list of upcoming events.
+	if ( $current_time < $yesterday ){
+		return array(
+			'failure' => true,
+			'failure_id' => 'single_event_has_ended'
+		);
+	}
 
-		// If the recurring end date has "passed" (in the current loop) for this repeating event, don't add it to the list of upcoming events.
-		if ( $event_repeat != 'none' && $end_repeat_date != 'infinite' && $current_time > strtotime( $end_repeat_date ) ){
+	// If the recurring end date has "passed" (in the current loop) for this repeating event, don't add it to the list of upcoming events.
+	if ( $event_repeat != 'none' && ! $end_repeat_date_infinite ) {
+	 	if( $current_time > $end_repeat_date->getTimestamp() ){
 			return array(
 				'failure' => true,
 				'failure_id' => 'recurring_event_has_ended'
 			);
 		}
+	}
 
-		// If the recurring start date has not yet "passed" (in the current loop) for this repeating event, don't add it to the list of upcoming events yet.
-		if ( $event_repeat != 'none' && $current_time < $start_date ){
-			return array(
-				'failure' => true,
-				'failure_id' => 'recurring_event_has_not_started'
-			);
-		}
+	// If the recurring start date has not yet "passed" (in the current loop) for this repeating event, don't add it to the list of upcoming events yet.
+	if ( $event_repeat != 'none' && $current_time < $start_date->getTimestamp() ){
+		return array(
+			'failure' => true,
+			'failure_id' => 'recurring_event_has_not_started'
+		);
+	}
 
-		//Reset the date of this phantom event "post" in the query
-		$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day );
-		$this_event->mp_events_end_date = date( 'Y-m-d', strtotime( $this_event->post_date ) + $seconds_between_start_and_end );
+	//Reset the date of this phantom event "post" in the query
+	$this_event->post_date = $current_day->format('Y-m-d H:i:s');
+	$this_event->post_date_gmt = $current_date_utc_timezone->format('Y-m-d H:i:s');
 
-		//Add the date to the permalink
-		new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
+	$this_event->mp_events_end_date = $end_date_time->format('Y-m-d H:i:s');
+
+	//Add the date to the permalink
+	new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
+
+	//If this query is a posts per page query
+	if ( $loop_cutoff_type == 'posts_per_page' ){
 
 		return array(
 				'event' => $this_event
 		);
 
-
 	}
 	//If this is a days per page query
 	else{
 
-		//Reset the date
-		$this_event->post_date = apply_filters( 'mp_event_loop_date', $current_day );
-		$this_event->mp_events_end_date = date( 'Y-m-d', strtotime( $this_event->post_date ) + $seconds_between_start_and_end );
-
-		//Add the date to the permalink
-		new mp_events_set_permalink_filter( array( 'post_id' => $this_event->ID ) );
-
 		return $this_event;
 	}
+
+}
+
+// Get the date object for an event based on its date and time entered in wp-admin
+function mp_events_get_event_datetime_object( $day_of_event ) {
+
+	// If the start date is not valid, we don't have a valid entered date
+	if ( ! $day_of_event ) {
+		return false;
+	}
+
+	$wp_timezone = new DateTimeZone( mp_events_get_timezone_id() );
+
+	// Try to create the date object, checking if they entered the date and the time in the event start date field
+	$date_object = new DateTime();
+	$date_object = $date_object->createFromFormat( 'Y-m-d H:i:s', $day_of_event, $wp_timezone );
+
+	// If we got a valid date time object
+	if ( $date_object instanceof DateTime ) {
+		return $date_object;
+	}
+
+	// if we did not get a valid date time object, try without the time
+	$date_object = new DateTime();
+	$date_object = $date_object->createFromFormat( 'Y-m-d', $day_of_event, $wp_timezone );
+
+	// If we got a valid date time object
+	if ( $date_object instanceof DateTime ) {
+
+		return $date_object;
+
+	}
+
+	// If we were not able to create a datetime object (probably the wrong format), return false
+	return false;
 
 }

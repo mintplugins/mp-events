@@ -24,16 +24,16 @@ function mp_events_create_meta_box(){
 		'event_start_date' => array(
 			'field_id'			=> 'event_start_date',
 			'field_title' 	=> __( 'Event Start Date  (Required)', 'mp_events'),
-			'field_description' 	=> 'The date of this event. Format: yyyy-mm-dd',
+			'field_description' 	=> 'The date of this event. Format: yyyy-mm-dd hh:mm:ss. Example: 1970-01-01 01:00:00',
 			'field_type' 	=> 'textbox',
-			'field_placeholder' => 'yyyy-mm-dd',
+			'field_placeholder' => 'yyyy-mm-dd hh:mm:ss',
 			'field_value' => '',
 			'field_required' => true
 		),
 		'event_start_time' => array(
 			'field_id'			=> 'event_start_time',
 			'field_title' 	=> __( 'Event Start Time', 'mp_events'),
-			'field_description' 	=> 'Enter a description for the start time. Can be multiple times if needed. EG: 9:00am, 10:30am, and 7:30PM EST.',
+			'field_description' 	=> 'Enter a description for the start time. Can be multiple times if needed. EG: "Show up at 8pm" or "9am, 10am, and 11am".',
 			'field_type' 	=> 'textarea',
 			'field_value' => '',
 		),
