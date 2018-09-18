@@ -323,7 +323,7 @@ function mp_events_post( $mp_events ){
 				}
 
 				//If this event is in the future according to "yesterday" and this is a posts per page
-				if ( $start_date->getTimestamp() > $yesterday ){
+				if ( $start_date->getTimestamp() > $yesterday->getTimestamp() ){
 
 					$this_event = mp_events_modify_event( $mp_event, $start_date, $loop_cutoff_type );
 
@@ -839,12 +839,12 @@ function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 		$seconds_between_start_and_end = 0;
 	}
 
-	$end_date_time = new DateTime( '@' . ( $current_time + $seconds_between_start_and_end ) );
-
 	$current_time = $current_day->getTimestamp();
 
+	$end_date_time = new DateTime( '@' . ( $current_time + $seconds_between_start_and_end ) );
+
 	//If this event is in the past according to "yesterday", don't add it to the list of upcoming events.
-	if ( $current_time < $yesterday ){
+	if ( $current_time < $yesterday->getTimestamp() ){
 		return array(
 			'failure' => true,
 			'failure_id' => 'single_event_has_ended'
