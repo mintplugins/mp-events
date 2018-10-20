@@ -144,16 +144,24 @@ function mp_events_post( $mp_events ){
 			//Set Post ID
 			$post_id = $mp_event->ID;
 
+			$event_start_date_meta = get_post_meta( $post_id, 'event_start_date', true );
+
 			//Set Post Date to the date of the event
 			$date_object = new DateTime();
-			$date_object = $date_object->createFromFormat( 'Y-m-d', get_post_meta( $post_id, 'event_start_date', true ), $wp_timezone );
+			$date_object = $date_object->createFromFormat( 'Y-m-d', $event_start_date_meta, $wp_timezone );
+			$time_of_event = '00:00:00';
 
 			// If we were not able to create a datetime object (probably the wrong format), skip this event
 			if ( ! ( $date_object instanceof DateTime ) ) {
 
 				// Check to see if they entered the time of the event in the date field
 				$date_object = new DateTime();
-				$date_object = $date_object->createFromFormat( 'Y-m-d H:i:s', get_post_meta( $post_id, 'event_start_date', true ), $wp_timezone );
+				$date_object = $date_object->createFromFormat( 'Y-m-d H:i:s', $event_start_date_meta );
+
+				$time_of_event = explode( ' ', $event_start_date_meta );
+				if ( isset( $time_of_event[1] ) ) {
+					$time_of_event = $time_of_event[1];
+				}
 
 				// If the format of the date is still no good, skip this event
 				if ( ! ( $date_object instanceof DateTime ) ) {
@@ -161,7 +169,7 @@ function mp_events_post( $mp_events ){
 				}
 			}
 
-			//$date_object = new DateTime( get_post_meta( $post_id, 'event_start_date', true ), $wp_timezone );
+			//$date_object = new DateTime( $event_start_date_meta, $wp_timezone );
 			$post_date = $date_object->getTimestamp();
 
 			//Get Repeat Setting
@@ -174,9 +182,14 @@ function mp_events_post( $mp_events ){
 				$post_date = date("Y_m_d", $post_date);
 
 				//If this array has not yet been set up for this week day, set it up.
-				if ( !isset( $single_events[$post_date] ) ){  $single_events[$post_date] = array(); }
+				if ( !isset( $single_events[$post_date] ) ){
+					$single_events[$post_date] = array();
+				}
 
-				$single_events[$post_date][$post_id] = $post_id;
+				$single_events[$post_date][$post_id] = array(
+					'post_id' => $post_id,
+					'event_time' => $time_of_event
+				);
 
 			}
 
@@ -184,7 +197,10 @@ function mp_events_post( $mp_events ){
 			if ( $event_repeat == 'daily' ){
 
 				if ( !isset( $daily_posts ) ){  $daily_posts = array(); }
-				$daily_posts[$post_date][$post_id] = $post_id;
+				$daily_posts[$post_date][$post_id] = array(
+					'post_id' => $post_id,
+					'event_time' => $time_of_event
+				);
 
 			}
 
@@ -198,7 +214,10 @@ function mp_events_post( $mp_events ){
 				if ( !isset($weekly_posts[$post_date] ) ){ $weekly_posts[$post_date] = array(); }
 
 				//Push this post id into the array for this weedday
-				$weekly_posts[$post_date][$post_id] = $post_id;
+				$weekly_posts[$post_date][$post_id] = array(
+					'post_id' => $post_id,
+					'event_time' => $time_of_event
+				);
 			}
 
 
@@ -212,7 +231,10 @@ function mp_events_post( $mp_events ){
 				if ( !isset($fortnightly_posts[$post_date] ) ){ $fortnightly_posts[$post_date] = array(); }
 
 				//Push this post id into the array for this weedday
-				$fortnightly_posts[$post_date][$post_id] = $post_id;
+				$fortnightly_posts[$post_date][$post_id] = array(
+					'post_id' => $post_id,
+					'event_time' => $time_of_event
+				);
 
 			}
 
@@ -226,7 +248,10 @@ function mp_events_post( $mp_events ){
 				if ( !isset($monthly_posts[$post_date] ) ){ $monthly_posts[$post_date] = array(); }
 
 				//Push this post id into the array for this month day
-				$monthly_posts[$post_date][$post_id] = $post_id;
+				$monthly_posts[$post_date][$post_id] = array(
+					'post_id' => $post_id,
+					'event_time' => $time_of_event
+				);
 			}
 
 			//Set yearly repeat array
@@ -239,7 +264,10 @@ function mp_events_post( $mp_events ){
 				if ( !isset($yearly_posts[$post_date] ) ){ $yearly_posts[$post_date] = array(); }
 
 				//Push this post id into the array for this month day
-				$yearly_posts[$post_date][$post_id] = $post_id;
+				$yearly_posts[$post_date][$post_id] = array(
+					'post_id' => $post_id,
+					'event_time' => $time_of_event
+				);
 			}
 
 
@@ -315,7 +343,7 @@ function mp_events_post( $mp_events ){
 
 				$the_start_date = mp_core_get_post_meta( $mp_event->ID, 'event_start_date' );
 				$the_start_time = mp_core_get_post_meta( $mp_event->ID, 'event_start_time' );
-				$start_date = mp_events_get_event_datetime_object( $the_start_date, $the_start_time );
+				$start_date = mp_events_get_event_datetime_object( $the_start_date );
 
 				// If we were not able to create a datetime object (probably the wrong format), skip this event
 				if ( ! ( $start_date instanceof DateTime ) ) {
@@ -324,6 +352,11 @@ function mp_events_post( $mp_events ){
 
 				//If this event is in the future according to "yesterday" and this is a posts per page
 				if ( $start_date->getTimestamp() > $yesterday->getTimestamp() ){
+
+					if ( ! $start_date ) {
+						echo '1';
+						die();
+					}
 
 					$this_event = mp_events_modify_event( $mp_event, $start_date, $loop_cutoff_type );
 
@@ -382,12 +415,12 @@ function mp_events_post( $mp_events ){
 			foreach ($single_events as $fulldate_num => $single_events_array){
 
 				//Loop through each post set for this full_date
-				foreach( $single_events_array as $single_event_id ){
+				foreach( $single_events_array as $single_event_id => $single_event_data ){
 
 					//get start date of this post
 					$the_start_date = mp_core_get_post_meta( $single_event_id, 'event_start_date' );
 					$the_start_time = mp_core_get_post_meta( $single_event_id, 'event_start_time' );
-					$single_event_start_date = mp_events_get_event_datetime_object( $the_start_date, $the_start_time );
+					$single_event_start_date = mp_events_get_event_datetime_object( $the_start_date );
 
 					// If we were not able to create a datetime object (probably the wrong format), skip this event
 					if ( ! ( $single_event_start_date instanceof DateTime ) ) {
@@ -435,9 +468,14 @@ function mp_events_post( $mp_events ){
 					if ( $fulldate_num == $full_date ){
 
 						//Loop through each post set for this full_date
-						foreach( $single_events_array as $single_event_id ){
+						foreach( $single_events_array as $single_event_id => $single_event_data ){
 
-							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') );
+							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') . ' ' .$single_event_data['event_time'] );
+
+							if ( false == $date_event_should_be ) {
+								echo '2';
+								die();
+							}
 
 							//Change date to correct date and make other modifications
 							$this_event = mp_events_modify_event( $single_event_id, $date_event_should_be, $loop_cutoff_type );
@@ -477,9 +515,14 @@ function mp_events_post( $mp_events ){
 			//Add all daily posts
 			if (!empty( $daily_posts ) ) {
 				foreach ($daily_posts as $day_key => $daily_post){
-					foreach( $daily_post as $daily_post_id ){
+					foreach( $daily_post as $daily_post_id => $daily_post_data ){
 
-						$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') );
+						$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') . ' ' .$daily_post_data['event_time'] );
+
+						if ( false == $date_event_should_be ) {
+							echo '3';
+							die();
+						}
 
 						//Change date to correct date and make other modifications
 						$this_event = mp_events_modify_event( $daily_post_id, $date_event_should_be, $loop_cutoff_type );
@@ -524,9 +567,14 @@ function mp_events_post( $mp_events ){
 					//If this weekday is the same as the current day we are looping through
 					if ( $weekday_name == $day_of_week ){
 						//Loop through each post set for this weekday
-						foreach( $weekday_array as $weekday_post ){
+						foreach( $weekday_array as $weekday_post => $weekly_post_data ){
 
-							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') );
+							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') . ' ' .$weekly_post_data['event_time'] );
+
+							if ( false == $date_event_should_be ) {
+								echo '4';
+								die();
+							}
 
 							//Change date to correct date and make other modifications
 							$this_event = mp_events_modify_event( $weekday_post, $date_event_should_be, $loop_cutoff_type );
@@ -569,9 +617,14 @@ function mp_events_post( $mp_events ){
 					//If this monthday is the same as the current day we are looping through
 					if ( $monthday_num == $day_of_month ){
 						//Loop through each post set for this weekday
-						foreach( $monthday_array as $monthday_post ){
+						foreach( $monthday_array as $monthday_post => $monthly_post_data ){
 
-							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') );
+							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') . ' ' .$monthly_post_data['event_time'] );
+
+							if ( false == $date_event_should_be ) {
+								echo '5';
+								die();
+							}
 
 							//Change date to correct date and make other modifications
 							$this_event = mp_events_modify_event( $monthday_post, $date_event_should_be, $loop_cutoff_type );
@@ -615,9 +668,14 @@ function mp_events_post( $mp_events ){
 					//If this monthday is the same as the current day we are looping through
 					if ( $monthday_date == $day_of_month_of_year ){
 						//Loop through each post set for this year day
-						foreach( $monthday_array as $monthday_post ){
+						foreach( $monthday_array as $monthday_post => $monthday_post_data ){
 
-							$date_event_should_be = mp_events_get_event_datetime_object( $current_day->format('Y-m-d') );
+							$date_event_should_be = mp_events_get_event_datetime_object(  $current_day->format('Y-m-d') . ' ' .$monthday_post_data['event_time']  );
+
+							if ( false == $date_event_should_be ) {
+								echo '6';
+								die();
+							}
 
 							//Change date to correct date and make other modifications
 							$this_event = mp_events_modify_event( $monthday_post, $date_event_should_be, $loop_cutoff_type );
@@ -706,6 +764,14 @@ function mp_events_post( $mp_events ){
 			$rebuilt_posts_array = empty( $rebuilt_posts_array ) ? $empty_post : $rebuilt_posts_array;
 
 		}
+
+		// Re-sort the posts being shown by their post_date
+
+		$dates = array();
+		foreach ($rebuilt_posts_array as $key => $row) {
+		    $dates[$key] = $row->post_date;
+		}
+		array_multisort($dates, SORT_ASC, $rebuilt_posts_array);
 
 		return $rebuilt_posts_array;
 	}
