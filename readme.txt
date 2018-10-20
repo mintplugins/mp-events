@@ -32,6 +32,9 @@ Create Events
 
 == Changelog ==
 
+= 1.0.1.6 = October 20, 2018
+* Make events properly order based on time of day
+
 = 1.0.1.5 = September 18, 2018
 * Fix $yesterday to use getTimestamp()
 

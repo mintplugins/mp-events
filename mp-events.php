@@ -3,7 +3,7 @@
 Plugin Name: MP Events
 Plugin URI: http://mintplugins.com
 Description: Create events.
-Version: 1.0.1.5
+Version: 1.0.1.6
 Author: Mint Plugins
 Author URI: http://mintplugins.com
 Text Domain: mp_events
@@ -34,7 +34,7 @@ License: GPL2
 */
 // Plugin version
 if( !defined( 'MP_EVENTS_VERSION' ) )
-	define( 'MP_EVENTS_VERSION', '1.0.1.5' );
+	define( 'MP_EVENTS_VERSION', '1.0.1.6' );
 
 // Plugin Folder URL
 if( !defined( 'MP_EVENTS_PLUGIN_URL' ) )
