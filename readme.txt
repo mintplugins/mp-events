@@ -4,7 +4,7 @@ Donate link: http://mintplugins.com/
 Tags: message bar, header
 Requires at least: 3.5
 Tested up to: 4.9.4
-Stable tag: 1.0.1.5
+Stable tag: 1.0.1.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,9 @@ Create Events
 == Screenshots ==
 
 == Changelog ==
+
+= 1.0.1.7 = November 1, 2018
+* Fix off-by-1-month on 1st of each month
 
 = 1.0.1.6 = October 20, 2018
 * Make events properly order based on time of day
