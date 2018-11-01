@@ -101,6 +101,7 @@ function mp_events_post( $mp_events ){
 	$wp_timezone = new DateTimeZone( mp_events_get_timezone_id() );
 	$utc_timezone = new DateTimeZone( 'UTC' );
 	$yesterday = new DateTime( 'yesterday', $wp_timezone );
+	$today = new DateTime( 'today', $wp_timezone );
 
 	//Make sure this doesn't affect other loops on this page
 	remove_filter ( 'the_posts', 'mp_events_post' );
@@ -291,7 +292,7 @@ function mp_events_post( $mp_events ){
 			if ( isset( $mp_events_custom_query->query_vars['mp_events_month'] ) ) {
 				$day = 1;
 			} else {
-				$day = date('d', $yesterday->getTimestamp() );
+				$day = date('d', $today->getTimestamp() );
 			}
 		} else {
 			$mp_events_custom_query->query_vars['mp_events_day'];
