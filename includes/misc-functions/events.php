@@ -920,7 +920,15 @@ function mp_events_modify_event( $post_id, $current_day, $loop_cutoff_type ){
 
 	// If the recurring end date has "passed" (in the current loop) for this repeating event, don't add it to the list of upcoming events.
 	if ( $event_repeat != 'none' && ! $end_repeat_date_infinite ) {
-	 	if( $current_time > $end_repeat_date->getTimestamp() ){
+
+		if ( $valid_end_repeat_date ) {
+		 	if( $current_time > $end_repeat_date->getTimestamp() ){
+				return array(
+					'failure' => true,
+					'failure_id' => 'recurring_event_has_ended'
+				);
+			}
+		} else {
 			return array(
 				'failure' => true,
 				'failure_id' => 'recurring_event_has_ended'
