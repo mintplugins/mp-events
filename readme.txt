@@ -32,6 +32,9 @@ Create Events
 
 == Changelog ==
 
+= 1.0.1.8 = January 3, 2019
+* Make sure event end date is valid format
+
 = 1.0.1.7 = November 1, 2018
 * Fix off-by-1-month on 1st of each month
 
